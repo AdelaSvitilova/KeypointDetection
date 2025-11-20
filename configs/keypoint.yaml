@@ -1,0 +1,7 @@
+model:
+  name: simple_net
+  params:
+    input_channels: 1
+    num_keypoints: 5
+    H: 32
+    W: 32

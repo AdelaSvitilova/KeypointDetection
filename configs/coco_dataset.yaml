@@ -1,0 +1,7 @@
+dataset:
+  name: coco
+  params:
+    root_dir: "./data/coco"
+    train_split: "train2017"
+    val_split: "val2017"
+    num_keypoints: 17

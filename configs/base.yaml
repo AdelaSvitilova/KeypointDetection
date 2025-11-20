@@ -1,0 +1,25 @@
+model:
+  name: test_model_pytorch
+  backend: pytorch
+  params:
+    input_channels: 3
+    num_keypoints: 17
+
+dataset:
+  name: coco
+  split: ["train2017", "val2017"]
+  params:
+    root_dir: "./data/coco"
+    num_keypoints: 17
+
+loss:
+  name: MSE
+
+metrics:
+  names: ["PCK"]
+
+train:
+  batch_size: 16
+  lr: 0.01
+  epochs: 6
+  val_every_epochs: 2
