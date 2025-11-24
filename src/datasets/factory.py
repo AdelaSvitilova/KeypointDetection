@@ -1,9 +1,11 @@
 from .random_dataset import RandomDataset
+from .random_dataset_heatmaps import RandomHeatmapDataset
 from .coco_dataset import COCOKeypointDataset
 
 def get_dataset(name, split=None, **kwargs):
     datasets = {
         "random": RandomDataset,
+        "random_heatmaps": RandomHeatmapDataset,
         "coco": COCOKeypointDataset,
     }
 

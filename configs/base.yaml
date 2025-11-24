@@ -1,15 +1,16 @@
+keypoints: heatmaps
+
 model:
-  name: test_model_pytorch
-  backend: pytorch
+  name: test_model_heatmap_keras
+  backend: keras
   params:
     input_channels: 3
     num_keypoints: 17
 
 dataset:
-  name: coco
+  name: random_heatmaps
   split: ["train2017", "val2017"]
   params:
-    root_dir: "./data/coco"
     num_keypoints: 17
 
 loss:
