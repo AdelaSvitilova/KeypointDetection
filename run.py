@@ -6,6 +6,7 @@ from src.metrics.factory import get_metrics
 from src.train.factory import get_trainer
 
 cfg = load_config(["configs/base.yaml"])
+cfg = load_config(["configs/base.yaml", "configs/stacked_hourglass_pytorch.yaml"])
 print(cfg)
 
 model = get_model(cfg["model"]["name"], **cfg["model"]["params"])

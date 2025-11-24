@@ -1,0 +1,9 @@
+model:
+  name: stacked_hourglass_pytorch
+  backend: pytorch
+  params:
+    input_channels: 3
+    num_keypoints: 17
+    nstack: 2
+    inp_dim: 255
+    oup_dim: 17

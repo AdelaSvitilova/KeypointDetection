@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
 from .base_trainer import BaseTrainer
 
 class PytorchTrainer(BaseTrainer):
@@ -50,7 +51,15 @@ class PytorchTrainer(BaseTrainer):
                 preds = self.model(x)
 
                 # loss = torch-based → backprop funguje
-                loss = self.loss_fn(preds, y)
+                if preds.ndim == 5:
+                    preds = preds[:, 0]
+                    
+                if y.shape[-2:] != preds.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                    y_small = F.interpolate(y, size=preds.shape[2:], mode='bilinear', align_corners=False)
+                else:
+                    y_small = y
+                    
+                loss = self.loss_fn(preds, y_small)
                 loss.backward()
                 self.optimizer.step()
 
@@ -58,7 +67,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
-                    metric.update(preds.detach(), y.detach())
+                    metric.update(preds.detach(), y_small.detach())
 
             epoch_loss = running_loss / len(self.train_dataset)
             epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
@@ -77,13 +86,23 @@ class PytorchTrainer(BaseTrainer):
             for x_val, y_val in val_loader:
                 x_val = torch.as_tensor(x_val, dtype=torch.float32, device=self.device)
                 y_val = torch.as_tensor(y_val, dtype=torch.float32, device=self.device)
-
+                
                 preds_val = self.model(x_val)
-                loss_val = self.loss_fn(preds_val, y_val)
+
+                if preds_val.ndim == 5:
+                    preds_val = preds_val[:, 0]
+                    
+                if y_val.shape[-2:] != preds_val.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                    y_val_small = F.interpolate(y_val, size=preds_val.shape[2:], mode='bilinear', align_corners=False)
+                else:
+                    y_val_small = y_val
+
+                
+                loss_val = self.loss_fn(preds_val, y_val_small)
                 val_loss += loss_val.item() * x_val.size(0)
 
                 for metric in self.metrics:
-                    metric.update(preds_val.detach(), y_val.detach())
+                    metric.update(preds_val.detach(), y_val_small.detach())
 
         val_loss /= len(self.val_dataset)
         val_metrics = {type(m).__name__: m.compute() for m in self.metrics}

@@ -41,7 +41,6 @@ class TFModel(tf.keras.Model, ModelInterface):
     def predict(self, x):
         return super().predict(x)
     
-    import keras
 from keras import Model, layers
 
 class KerasModel(Model, ModelInterface):

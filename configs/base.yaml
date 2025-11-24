@@ -1,8 +1,8 @@
 keypoints: heatmaps
 
 model:
-  name: test_model_heatmap_keras
-  backend: keras
+  name: test_model_heatmap_pytorch #test_model_heatmap_pytorch #stacked_hourglass_pytorch #test_model_heatmap_keras
+  backend: pytorch
   params:
     input_channels: 3
     num_keypoints: 17
