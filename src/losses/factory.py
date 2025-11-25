@@ -1,5 +1,6 @@
 from .mse_loss_pytorch import KeypointMSELossPytorch
 from .mse_loss_keras import KeypointMSELossKeras
+from .multi_mse_loss_pytorch import MultiMSELossPytorch
 
 def get_loss(name, backend, **kwargs):
     backend = backend.lower()
@@ -10,6 +11,9 @@ def get_loss(name, backend, **kwargs):
             "keras": KeypointMSELossKeras,
             # "numpy": KeypointMSELossNumpy,
         },
+        "multi_MSE": {
+            "pytorch": MultiMSELossPytorch
+        }
     }
 
     if name not in losses:

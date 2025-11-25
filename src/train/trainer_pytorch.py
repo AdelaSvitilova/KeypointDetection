@@ -52,10 +52,10 @@ class PytorchTrainer(BaseTrainer):
 
                 # loss = torch-based → backprop funguje
                 if preds.ndim == 5:
-                    preds = preds[:, 0]
+                    preds_tmp = preds[:, -1]
                     
-                if y.shape[-2:] != preds.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
-                    y_small = F.interpolate(y, size=preds.shape[2:], mode='bilinear', align_corners=False)
+                if y.shape[-2:] != preds_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                    y_small = F.interpolate(y, size=preds_tmp.shape[2:], mode='bilinear', align_corners=False)
                 else:
                     y_small = y
                     
@@ -67,7 +67,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
-                    metric.update(preds.detach(), y_small.detach())
+                    metric.update(preds_tmp.detach(), y_small.detach())
 
             epoch_loss = running_loss / len(self.train_dataset)
             epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
@@ -90,10 +90,10 @@ class PytorchTrainer(BaseTrainer):
                 preds_val = self.model(x_val)
 
                 if preds_val.ndim == 5:
-                    preds_val = preds_val[:, 0]
+                    preds_val_tmp = preds_val[:, -1]
                     
-                if y_val.shape[-2:] != preds_val.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
-                    y_val_small = F.interpolate(y_val, size=preds_val.shape[2:], mode='bilinear', align_corners=False)
+                if y_val.shape[-2:] != preds_val_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                    y_val_small = F.interpolate(y_val, size=preds_val_tmp.shape[2:], mode='bilinear', align_corners=False)
                 else:
                     y_val_small = y_val
 
@@ -102,7 +102,7 @@ class PytorchTrainer(BaseTrainer):
                 val_loss += loss_val.item() * x_val.size(0)
 
                 for metric in self.metrics:
-                    metric.update(preds_val.detach(), y_val_small.detach())
+                    metric.update(preds_val_tmp.detach(), y_val_small.detach())
 
         val_loss /= len(self.val_dataset)
         val_metrics = {type(m).__name__: m.compute() for m in self.metrics}

@@ -7,3 +7,6 @@ model:
     nstack: 2
     inp_dim: 255
     oup_dim: 17
+
+loss:
+  name: multi_MSE
