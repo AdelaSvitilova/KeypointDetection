@@ -1,4 +1,8 @@
 # List of all configurations, overwritten sequentially; the basic configuration must always be first
 configs:
   - configs/base.yaml #Always must be first!
+  # models
   - configs/models/stacked_hourglass_pytorch.yaml
+  # - configs/models/test_pytorch.yaml
+  # datasets
+  # - configs/datasets/coco_dataset.yaml

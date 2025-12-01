@@ -1,0 +1,6 @@
+model:
+  name: test_model_pytorch
+  backend: pytorch
+  params:
+    input_channels: 3
+    num_keypoints: 17
