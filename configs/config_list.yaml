@@ -1,0 +1,3 @@
+configs:
+  - configs/base.yaml # Always must be first!
+  - configs/models/stacked_hourglass_pytorch.yaml
