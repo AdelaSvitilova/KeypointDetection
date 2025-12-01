@@ -1,6 +1,22 @@
 from .pck import PCK
 
 def get_metrics(names, **kwargs):
+    """
+    Factory function to create metric instances based on their names.
+
+    This function selects the appropriate metric class and initializes it with
+    any additional keyword arguments. All metrics are framework-agnostic.
+
+    Parameters:
+        names (list of str): List of metric names to create (e.g., ["PCK"]).
+        **kwargs: Additional keyword arguments to pass to the metric constructors.
+
+    Returns:
+        list: Instances of the selected metric classes.
+
+    Raises:
+        ValueError: If a requested metric name is not recognized.
+    """
     metrics = {
         "PCK": PCK,
     }
