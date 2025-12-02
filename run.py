@@ -34,17 +34,19 @@ def main():
     )
 
     # Create loss function and metrics
-    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["backend"])
+    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["framework"])
     metrics = get_metrics(cfg["metrics"]["names"])
 
     # Create trainer and start training
     trainer = get_trainer(
-        backend=cfg["model"]["backend"],
+        backend=cfg["model"]["framework"],
         model=model,
         train_dataset=train_dataset,
         val_dataset=val_dataset,
         loss_fn=loss_fn,
         metrics=metrics,
+        keypoint_format=cfg["keypoint_format"],
+        special_mode=cfg["model"]["special_mode"],
         **cfg["train"]
     )
     trainer.train()

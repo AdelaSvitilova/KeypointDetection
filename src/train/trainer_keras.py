@@ -13,7 +13,7 @@ class KerasTrainer(BaseTrainer):
         batch_size=16,
         epochs=10,
         lr=0.001,
-        val_every_epochs=1
+        keypoint_format = "kypoints"
     ):
         self.model = model
         self.train_dataset = train_dataset
@@ -22,7 +22,6 @@ class KerasTrainer(BaseTrainer):
         self.metrics = metrics or []
         self.batch_size = batch_size
         self.epochs = epochs
-        self.val_every_epochs = val_every_epochs
 
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 

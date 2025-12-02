@@ -2,12 +2,13 @@
 
 model:
   name: test_model_heatmap_pytorch #test_model_heatmap_pytorch #stacked_hourglass_pytorch #test_model_heatmap_keras
-  backend: pytorch
+  framework: pytorch
+  special_mode: cut_five_dim
   params:
     input_channels: 3
     num_keypoints: 17
-
-keypoints: heatmaps
+    
+keypoint_format: heatmaps
 
 dataset:
   name: random_heatmaps
@@ -25,4 +26,3 @@ train:
   batch_size: 2
   lr: 0.01
   epochs: 2
-  val_every_epochs: 1

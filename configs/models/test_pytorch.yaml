@@ -4,3 +4,5 @@ model:
   params:
     input_channels: 3
     num_keypoints: 17
+
+keypoint_format: keypoints

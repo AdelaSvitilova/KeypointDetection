@@ -19,7 +19,7 @@ class BaseTrainer(ABC):
         framework (str): Framework name, used for informational purposes.
     """
 
-    def __init__(self, model, train_dataset, val_dataset=None, loss_fn=None, metrics=None, batch_size=16, epochs=10, framework='numpy'):
+    def __init__(self, model, train_dataset, val_dataset=None, loss_fn=None, metrics=None, batch_size=16, epochs=10, lr=0.01, framework='pytorch', keypoint_format="keypoints"):
         self.model = model
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
@@ -27,7 +27,9 @@ class BaseTrainer(ABC):
         self.metrics = metrics or []
         self.batch_size = batch_size
         self.epochs = epochs
+        self.lr = lr
         self.framework = framework
+        self.keypoint_format = keypoint_format
 
     @abstractmethod
     def train(self):

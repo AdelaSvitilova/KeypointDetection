@@ -12,21 +12,27 @@ class PytorchTrainer(BaseTrainer):
         loss_fn,
         metrics=None,
         batch_size=16,
-        lr=0.01,
         epochs=10,
-        device=None,
-        val_every_epochs=1
+        lr=0.01,
+        keypoint_format = "keypoints",
+        special_mode=None,
+        device=None
     ):
-        self.model = model
-        self.train_dataset = train_dataset
-        self.val_dataset = val_dataset
-        self.loss_fn = loss_fn
-        self.metrics = metrics or []
-        self.batch_size = batch_size
-        self.lr = lr
-        self.epochs = epochs
+        super().__init__(
+            model=model,
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            loss_fn=loss_fn,
+            metrics=metrics,
+            batch_size=batch_size,
+            epochs=epochs,
+            lr=lr,
+            framework="pytorch",
+            keypoint_format=keypoint_format
+        )
+        
+        self.special_mode = special_mode
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.val_every_epochs = val_every_epochs
 
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
@@ -51,10 +57,12 @@ class PytorchTrainer(BaseTrainer):
                 preds = self.model(x)
 
                 # loss = torch-based → backprop funguje
-                if preds.ndim == 5:
+                if self.special_mode=="cut_five_dim" and preds.ndim == 5:
                     preds_tmp = preds[:, -1]
+                else:
+                    preds_tmp = preds
                     
-                if y.shape[-2:] != preds_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                if self.keypoint_format=="heatmaps" and y.shape[-2:] != preds_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
                     y_small = F.interpolate(y, size=preds_tmp.shape[2:], mode='bilinear', align_corners=False)
                 else:
                     y_small = y
@@ -73,8 +81,7 @@ class PytorchTrainer(BaseTrainer):
             epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
             print(f"Epoch {epoch}/{self.epochs} | Train Loss: {epoch_loss:.4f} | Train Metrics: {epoch_metrics}")
 
-            if self.val_dataset is not None and (epoch % self.val_every_epochs == 0):
-                self.validate(val_loader, epoch)
+            self.validate(val_loader, epoch)
 
     def validate(self, val_loader, epoch):
         self.model.eval()
@@ -89,10 +96,12 @@ class PytorchTrainer(BaseTrainer):
                 
                 preds_val = self.model(x_val)
 
-                if preds_val.ndim == 5:
+                if self.special_mode=="cut_five_dim" and preds_val.ndim == 5:
                     preds_val_tmp = preds_val[:, -1]
+                else:
+                    preds_val_tmp = preds_val
                     
-                if y_val.shape[-2:] != preds_val_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
+                if self.keypoint_format=="heatmaps" and y_val.shape[-2:] != preds_val_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
                     y_val_small = F.interpolate(y_val, size=preds_val_tmp.shape[2:], mode='bilinear', align_corners=False)
                 else:
                     y_val_small = y_val
