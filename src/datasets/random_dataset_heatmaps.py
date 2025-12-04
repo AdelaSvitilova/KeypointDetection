@@ -18,7 +18,7 @@ class RandomHeatmapDataset(BaseDataset):
     - obrázky: [3, H, W]
     - heatmapy: [num_keypoints, H, W]
     """
-    def __init__(self, num_samples=20, num_keypoints=5, H=256, W=256, sigma=3, split=None):
+    def __init__(self, num_samples=20, num_keypoints=5, H=256, W=256, sigma=3, load=None):
         self.num_samples = num_samples
         self.num_keypoints = num_keypoints
         self.H = H

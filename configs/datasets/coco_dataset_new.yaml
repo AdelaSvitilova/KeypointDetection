@@ -1,0 +1,7 @@
+dataset:
+  name: coco_new
+  train: "train.csv"
+  val: "val.csv"
+  params:
+    root_dir: "./data/coco_csv"
+    num_keypoints: 17

@@ -7,7 +7,7 @@ class RandomDataset(BaseDataset):
     - obrázky: [3, H, W]
     - keypoints: [num_keypoints, 3] (x, y normalizované 0-1, z = 1)
     """
-    def __init__(self, num_samples=20, num_keypoints=5, H=256, W=256, split=None):
+    def __init__(self, num_samples=20, num_keypoints=5, H=256, W=256, load=None):
         self.num_samples = num_samples
         self.num_keypoints = num_keypoints
         self.H = H

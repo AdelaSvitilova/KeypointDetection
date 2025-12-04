@@ -12,7 +12,8 @@ keypoint_format: heatmaps
 
 dataset:
   name: random_heatmaps
-  split: ["train2017", "val2017"]
+  train: None
+  val: None
   params:
     num_keypoints: 17
 

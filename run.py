@@ -29,8 +29,12 @@ def main():
     model = get_model(cfg["model"]["name"], **cfg["model"]["params"])
 
     # Load datasets
-    train_dataset, val_dataset = get_dataset(
-        cfg["dataset"]["name"], cfg["dataset"]["split"], **cfg["dataset"]["params"]
+    train_dataset = get_dataset(
+        cfg["dataset"]["name"], cfg["dataset"]["train"], **cfg["dataset"]["params"]
+    )
+    
+    val_dataset = get_dataset(
+        cfg["dataset"]["name"], cfg["dataset"]["val"], **cfg["dataset"]["params"]
     )
 
     # Create loss function and metrics

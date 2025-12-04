@@ -71,7 +71,7 @@ class PytorchTrainer(BaseTrainer):
                 loss.backward()
                 self.optimizer.step()
 
-                running_loss += loss.item() * x.size(0)
+                running_loss += loss.item()
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
@@ -108,7 +108,7 @@ class PytorchTrainer(BaseTrainer):
 
                 
                 loss_val = self.loss_fn(preds_val, y_val_small)
-                val_loss += loss_val.item() * x_val.size(0)
+                val_loss += loss_val.item()
 
                 for metric in self.metrics:
                     metric.update(preds_val_tmp.detach(), y_val_small.detach())

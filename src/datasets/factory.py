@@ -1,12 +1,14 @@
 from .random_dataset import RandomDataset
 from .random_dataset_heatmaps import RandomHeatmapDataset
 from .coco_dataset import COCOKeypointDataset
+from .coco_dataset_new import COCODataset
 
-def get_dataset(name, split=None, **kwargs):
+def get_dataset(name, load=None, **kwargs):
     datasets = {
         "random": RandomDataset,
         "random_heatmaps": RandomHeatmapDataset,
         "coco": COCOKeypointDataset,
+        "coco_new": COCODataset,
     }
 
     if name not in datasets:
@@ -14,17 +16,7 @@ def get_dataset(name, split=None, **kwargs):
 
     DatasetClass = datasets[name]
 
-    # pokud split je None → načteme "vše"
-    if split is None:
-        return DatasetClass(**kwargs)  # třída sama načte všechny obrázky ve složce
-
-    # pokud je split list → projdeme jej
-    loaded_datasets = []
-    for s in split:
-        ds_kwargs = kwargs.copy()
-        ds_kwargs.pop("split", None)  # odstraníme split, dataset ho nezná
-        loaded_datasets.append(DatasetClass(split=s, **ds_kwargs))
-
-    if len(loaded_datasets) == 1:
-        return loaded_datasets[0]
-    return tuple(loaded_datasets)
+    if load is not None:
+        return DatasetClass(load=load,**kwargs)
+    
+    return DatasetClass(**kwargs)
