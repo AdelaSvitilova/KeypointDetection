@@ -3,6 +3,8 @@ from .random_dataset_heatmaps import RandomHeatmapDataset
 from .coco_dataset import COCOKeypointDataset
 from .coco_dataset_new import COCODataset
 
+from .transforms import KeypointsToHeatmaps
+
 def get_dataset(name, load=None, **kwargs):
     datasets = {
         "random": RandomDataset,
