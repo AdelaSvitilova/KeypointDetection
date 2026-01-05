@@ -6,15 +6,17 @@ import csv
 from .base_dataset import BaseDataset
 
 class COCODataset(BaseDataset):
-    def __init__(self, root_dir, load, transform=None, num_keypoints=17, target_size=(256,256)):
+    def __init__(self, root_dir, load, transform=None, heatmaps=None, num_keypoints=17, input_size=(256,256), output_size=(64,64)):
         ann_file = os.path.join(root_dir, 'annotations.json')
         self.img_dir = os.path.join(root_dir, 'images')
         load_file = os.path.join(root_dir, load)
 
         self.coco = COCO(ann_file)
         self.transform = transform
+        self.to_heatmaps = heatmaps
         self.num_keypoints = num_keypoints
-        self.target_size = target_size
+        self.input_size = input_size
+        self.output_size = output_size
 
         # Načti názvy souborů
         with open(load_file, newline='') as f:
@@ -63,11 +65,11 @@ class COCODataset(BaseDataset):
         orig_h, orig_w = image.shape[:2]
 
         # resize
-        image = cv2.resize(image, self.target_size)
+        image = cv2.resize(image, self.input_size)
 
         # scale pro keypointy
-        sx = self.target_size[0] / orig_w
-        sy = self.target_size[1] / orig_h
+        sx = self.output_size[0] / orig_w
+        sy = self.output_size[1] / orig_h
 
         keypoints = self.keypoints[idx].copy()
         keypoints[:, 0] *= sx
@@ -79,4 +81,13 @@ class COCODataset(BaseDataset):
         if self.transform:
             image, keypoints = self.transform(image, keypoints)
 
-        return image, keypoints
+        heatmaps = None
+
+        if self.to_heatmaps:
+            heatmaps = self.to_heatmaps(keypoints, self.output_size)
+
+        return {
+            "image": image,
+            "heatmaps": heatmaps,
+            "keypoints": keypoints,
+        }

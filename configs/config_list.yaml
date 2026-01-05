@@ -2,7 +2,7 @@
 configs:
   - configs/base.yaml #Always must be first!
   # setting 1
-  # - configs/models/stacked_hourglass_pytorch.yaml
+  - configs/models/stacked_hourglass_pytorch.yaml
   # setting 2
-  - configs/models/test_pytorch.yaml
+  # - configs/models/test_pytorch.yaml
   - configs/datasets/coco_dataset_new.yaml
