@@ -1,5 +1,5 @@
 dataset:
-  name: coco_new
+  name: coco
   train: "train.csv"
   val: "val.csv"
   params:
