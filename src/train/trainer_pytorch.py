@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from .base_trainer import BaseTrainer
+from .utils import collate_fn
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -38,8 +39,8 @@ class PytorchTrainer(BaseTrainer):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def train(self):
-        train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
-        val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False)
+        train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
+        val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
 
         for epoch in range(1, self.epochs + 1):
             self.model.train()
@@ -48,10 +49,11 @@ class PytorchTrainer(BaseTrainer):
             
             running_loss = 0.0
 
-            for x, y in train_loader:
+            for item in train_loader:
                 # převod na torch.Tensor až tady
-                x = torch.as_tensor(x, dtype=torch.float32, device=self.device)
-                y = torch.as_tensor(y, dtype=torch.float32, device=self.device)
+                x = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                y = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
+                y_h = y if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
 
                 self.optimizer.zero_grad()
                 preds = self.model(x)
@@ -62,12 +64,8 @@ class PytorchTrainer(BaseTrainer):
                 else:
                     preds_tmp = preds
                     
-                if self.keypoint_format=="heatmaps" and y.shape[-2:] != preds_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
-                    y_small = F.interpolate(y, size=preds_tmp.shape[2:], mode='bilinear', align_corners=False)
-                else:
-                    y_small = y
                     
-                loss = self.loss_fn(preds, y_small)
+                loss = self.loss_fn(preds, y_h)
                 loss.backward()
                 self.optimizer.step()
 
@@ -75,7 +73,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
-                    metric.update(preds_tmp.detach(), y_small.detach())
+                    metric.update(preds_tmp.detach(), y_h.detach())
 
             epoch_loss = running_loss / len(self.train_dataset)
             epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
@@ -90,9 +88,10 @@ class PytorchTrainer(BaseTrainer):
 
         val_loss = 0.0
         with torch.no_grad():
-            for x_val, y_val in val_loader:
-                x_val = torch.as_tensor(x_val, dtype=torch.float32, device=self.device)
-                y_val = torch.as_tensor(y_val, dtype=torch.float32, device=self.device)
+            for item in val_loader:
+                x_val = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                y_val = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
+                y_h_val = y_val if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
                 
                 preds_val = self.model(x_val)
 
@@ -100,18 +99,13 @@ class PytorchTrainer(BaseTrainer):
                     preds_val_tmp = preds_val[:, -1]
                 else:
                     preds_val_tmp = preds_val
-                    
-                if self.keypoint_format=="heatmaps" and y_val.shape[-2:] != preds_val_tmp.shape[2:]:  # porovnáváme poslední dvě dimenze (H, W)
-                    y_val_small = F.interpolate(y_val, size=preds_val_tmp.shape[2:], mode='bilinear', align_corners=False)
-                else:
-                    y_val_small = y_val
 
                 
-                loss_val = self.loss_fn(preds_val, y_val_small)
+                loss_val = self.loss_fn(preds_val, y_h_val)
                 val_loss += loss_val.item()
 
                 for metric in self.metrics:
-                    metric.update(preds_val_tmp.detach(), y_val_small.detach())
+                    metric.update(preds_val_tmp.detach(), y_h_val.detach())
 
         val_loss /= len(self.val_dataset)
         val_metrics = {type(m).__name__: m.compute() for m in self.metrics}

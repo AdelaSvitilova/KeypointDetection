@@ -1,6 +1,0 @@
-dataset:
-  name: coco
-  split: ["train2017", "val2017"]
-  params:
-    root_dir: "./data/coco"
-    num_keypoints: 17

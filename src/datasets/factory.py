@@ -1,16 +1,12 @@
-from .random_dataset import RandomDataset
-from .random_dataset_heatmaps import RandomHeatmapDataset
-from .coco_dataset import COCOKeypointDataset
-from .coco_dataset_new import COCODataset
+from .coco_dataset import COCODataset
+from .random_datset import RandomDataset
 
-from .transforms import KeypointsToHeatmaps
+from .transforms.keypoints_to_heatmaps import keypoints_to_heatmaps_np
 
-def get_dataset(name, load=None, **kwargs):
+def get_dataset(name, load=None, keypoint_format=None, **kwargs):
     datasets = {
-        "random": RandomDataset,
-        "random_heatmaps": RandomHeatmapDataset,
-        "coco": COCOKeypointDataset,
-        "coco_new": COCODataset,
+        "coco": COCODataset,
+        "random": RandomDataset
     }
 
     if name not in datasets:
@@ -18,7 +14,12 @@ def get_dataset(name, load=None, **kwargs):
 
     DatasetClass = datasets[name]
 
-    if load is not None:
-        return DatasetClass(load=load,**kwargs)
+    heatmaps = None
     
-    return DatasetClass(**kwargs)
+    if keypoint_format == "heatmaps":
+        heatmaps = keypoints_to_heatmaps_np
+
+    if load is not None:
+        return DatasetClass(load=load, heatmaps=heatmaps, **kwargs)
+    
+    return DatasetClass(heatmaps=heatmaps, **kwargs)

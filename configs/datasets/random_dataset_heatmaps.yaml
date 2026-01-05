@@ -1,0 +1,8 @@
+dataset:
+  name: random
+  train: null
+  val: null
+  params:
+    num_keypoints: 17
+
+keypoint_format: heatmaps

@@ -11,9 +11,9 @@ model:
 keypoint_format: heatmaps
 
 dataset:
-  name: random_heatmaps
-  train: None
-  val: None
+  name: random
+  train: null
+  val: null
   params:
     num_keypoints: 17
 
