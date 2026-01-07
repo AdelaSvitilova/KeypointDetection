@@ -1,0 +1,8 @@
+model:
+  name: test_model_heatmap_pytorch
+  backend: pytorch
+  params:
+    input_channels: 3
+    num_keypoints: 17
+
+keypoint_format: heatmaps

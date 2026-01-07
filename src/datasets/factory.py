@@ -1,5 +1,5 @@
 from .coco_dataset import COCODataset
-from .random_datset import RandomDataset
+from .random_dataset import RandomDataset
 
 from .transforms.keypoints_to_heatmaps import keypoints_to_heatmaps_np
 
