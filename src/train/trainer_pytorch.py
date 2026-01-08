@@ -73,7 +73,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
-                    metric.update(preds_tmp.detach(), y_h.detach())
+                    metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy())
 
             epoch_loss = running_loss / len(self.train_dataset)
             epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
@@ -105,7 +105,7 @@ class PytorchTrainer(BaseTrainer):
                 val_loss += loss_val.item()
 
                 for metric in self.metrics:
-                    metric.update(preds_val_tmp.detach(), y_h_val.detach())
+                    metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy())
 
         val_loss /= len(self.val_dataset)
         val_metrics = {type(m).__name__: m.compute() for m in self.metrics}

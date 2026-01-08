@@ -7,6 +7,9 @@ model:
 
 keypoint_format: heatmaps
 
+metrics:
+  names: ["PCK_heatmaps"]
+
 dataset:
   params:
     input_size:

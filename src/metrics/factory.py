@@ -1,4 +1,5 @@
 from .pck import PCK
+from .pck_heatmaps import PCKHeatmaps
 
 def get_metrics(names, **kwargs):
     """
@@ -19,6 +20,7 @@ def get_metrics(names, **kwargs):
     """
     metrics = {
         "PCK": PCK,
+        "PCK_heatmaps": PCKHeatmaps
     }
     selected = []
     for name in names:

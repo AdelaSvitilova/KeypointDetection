@@ -1,3 +1,4 @@
+import numpy as np
 from .base_metric import BaseMetric
 
 class PCK(BaseMetric):
@@ -8,9 +9,14 @@ class PCK(BaseMetric):
         self.total = 0
 
     def update(self, preds, targets):
-        dist = ((preds - targets)**2).sum(dim=2).sqrt()  # Euclidean distance
-        self.correct += (dist < self.threshold).sum().item()
-        self.total += dist.numel()
+        preds_xy = preds[..., :2]
+        targets_xy = targets[..., :2]
+
+        # Euclidean distance
+        dist = np.sqrt(np.sum((preds_xy - targets_xy) ** 2, axis=2))  # (B, K)
+
+        self.correct += np.sum(dist < self.threshold)
+        self.total += dist.size
 
     def compute(self):
         return self.correct / self.total if self.total > 0 else 0.0
