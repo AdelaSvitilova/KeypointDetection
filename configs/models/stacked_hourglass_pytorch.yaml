@@ -13,3 +13,12 @@ keypoint_format: heatmaps
 
 loss:
   name: multi_MSE
+
+dataset:
+  params:
+    input_size:
+      - 256
+      - 256
+    output_size:
+      - 64
+      - 64

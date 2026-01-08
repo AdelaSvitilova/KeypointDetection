@@ -6,3 +6,12 @@ model:
     num_keypoints: 17
 
 keypoint_format: heatmaps
+
+dataset:
+  params:
+    input_size:
+      - 256
+      - 256
+    output_size:
+      - 256
+      - 256
