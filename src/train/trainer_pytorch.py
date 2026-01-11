@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from .base_trainer import BaseTrainer
 from .utils import collate_fn
+from pathlib import Path
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -15,7 +16,8 @@ class PytorchTrainer(BaseTrainer):
         batch_size=16,
         epochs=10,
         lr=0.01,
-        keypoint_format = "keypoints",
+        experiment_name="exp0",
+        keypoint_format="keypoints",
         special_mode=None,
         device=None
     ):
@@ -38,11 +40,16 @@ class PytorchTrainer(BaseTrainer):
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
-    def train(self):
+        self.checkpoint_dir = Path("results") / experiment_name
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    def train(self, start_epoch=0, best_val_loss=float('inf')):
         train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
         val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
 
-        for epoch in range(1, self.epochs + 1):
+        best_val_loss = best_val_loss
+
+        for epoch in range(start_epoch + 1, self.epochs + 1):
             self.model.train()
             for metric in self.metrics:
                 metric.reset()
@@ -106,7 +113,53 @@ class PytorchTrainer(BaseTrainer):
             val_loss /= len(self.val_dataset)
             val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
-            print(f"Epoch {epoch} | Train Loss: {epoch_loss:.4f} | Train Metrics: {epoch_metrics} | Val Loss: {val_loss:.4f} | Val Metrics: {val_metrics}")
+            if (epoch) % 10 == 0:
+                self.save_checkpoint(
+                    epoch,
+                    best_val_loss, 
+                    path = self.checkpoint_dir / f"epoch_{epoch}.pt",
+                    )
+            
+            if val_loss < best_val_loss:
+                self.save_checkpoint(
+                    epoch,
+                    best_val_loss, 
+                    path = self.checkpoint_dir / f"best.pt",
+                    )
+                best_val_loss = val_loss
+
+            print(f"Epoch {epoch} | Train Loss: {epoch_loss:.3e} | Train Metrics: {epoch_metrics} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics}")
 
     def validate(self, val_loader, epoch):
         pass
+
+    def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):
+        checkpoint = {
+            "epoch": epoch,
+            "best_val_loss": best_val_loss,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+        }
+
+        if scheduler is not None:
+            checkpoint["scheduler_state_dict"] = scheduler.state_dict()
+
+        torch.save(checkpoint, path)
+
+    def continue_train(self, checkpoint_name):
+        path = self.checkpoint_dir / checkpoint_name
+
+        checkpoint = torch.load(path, map_location=self.device)
+
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        if hasattr(self, "scheduler") and "scheduler_state_dict" in checkpoint:
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+        start_epoch = checkpoint["epoch"]
+        best_val_loss = checkpoint["best_val_loss"]
+
+        print(f"Checkpoint načten: epoch {checkpoint.get('epoch', 0)}. Pokračuji od epochy {start_epoch + 1}.")
+
+        self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)

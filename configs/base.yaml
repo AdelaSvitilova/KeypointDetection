@@ -24,6 +24,6 @@ metrics:
   names: ["PCK"]
 
 train:
-  batch_size: 64
+  batch_size: 2
   lr: 0.01
-  epochs: 50
+  epochs: 5

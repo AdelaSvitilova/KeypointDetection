@@ -110,3 +110,6 @@ class KerasTrainer(BaseTrainer):
             total_loss += float(loss)
 
         print(f"[Epoch {epoch}] Validation loss: {total_loss:.4f}")
+
+    def continue_train(self):
+        pass

@@ -52,3 +52,7 @@ class BaseTrainer(ABC):
             epoch (int): Current epoch number (optional, for logging purposes).
         """
         pass
+
+    @abstractmethod
+    def continue_train(self):
+        pass
