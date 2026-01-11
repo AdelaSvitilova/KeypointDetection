@@ -25,6 +25,8 @@ Jak mám škálovat metriky?
 
 parametr save every epoch? 
 
+Logování něčeho?
+
 Epoch 1 | Train Loss: 0.0043 | Train Metrics: {'PCKHeatmaps': '0.0112'} | Val Loss: 949922044051.4561 | Val Metrics: {'PCKHeatmaps': '0.0064'}
 Epoch 2 | Train Loss: 0.0004 | Train Metrics: {'PCKHeatmaps': '0.0112'} | Val Loss: 876201.6160 | Val Metrics: {'PCKHeatmaps': '0.0052'}
 Epoch 3 | Train Loss: 0.0002 | Train Metrics: {'PCKHeatmaps': '0.0098'} | Val Loss: 17.3408 | Val Metrics: {'PCKHeatmaps': '0.0231'}

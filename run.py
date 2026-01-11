@@ -54,7 +54,7 @@ def main():
         **cfg["train"]
     )
     trainer.train()
-    # trainer.continue_train("epoch_3.pt")
+    # trainer.continue_train("epoch_20.pt")
 
 if __name__ == "__main__":
     main()
