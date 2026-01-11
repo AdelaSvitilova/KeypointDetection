@@ -30,11 +30,11 @@ def main():
 
     # Load datasets
     train_dataset = get_dataset(
-        cfg["dataset"]["name"], cfg["dataset"]["train"], cfg["keypoint_format"], **cfg["dataset"]["params"]
+        cfg["dataset"]["name"], cfg["dataset"]["train"], cfg["dataset"]["train_num_samples"], cfg["keypoint_format"], **cfg["dataset"]["params"]
     )
     
     val_dataset = get_dataset(
-        cfg["dataset"]["name"], cfg["dataset"]["val"], cfg["keypoint_format"], **cfg["dataset"]["params"]
+        cfg["dataset"]["name"], cfg["dataset"]["val"], cfg["dataset"]["val_num_samples"], cfg["keypoint_format"], **cfg["dataset"]["params"]
     )
 
     # Create loss function and metrics

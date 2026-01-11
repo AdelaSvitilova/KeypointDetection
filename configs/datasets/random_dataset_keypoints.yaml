@@ -1,7 +1,9 @@
 dataset:
   name: random
   train: null
+  train_num_samples: 30
   val: null
+  val_num_samples: 20
   params:
     num_keypoints: 17
 

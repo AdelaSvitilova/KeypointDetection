@@ -6,7 +6,7 @@ import csv
 from .base_dataset import BaseDataset
 
 class COCODataset(BaseDataset):
-    def __init__(self, root_dir, load, transform=None, heatmaps=None, 
+    def __init__(self, root_dir, load, num_samples=None, transform=None, heatmaps=None, 
                  num_keypoints=17, input_size=(256,256), 
                  output_size=(64,64)):
         ann_file = os.path.join(root_dir, 'annotations.json')
@@ -34,7 +34,13 @@ class COCODataset(BaseDataset):
         self.images = []
         self.keypoints = []
 
+        loaded = 0
+        max_samples = num_samples if num_samples is not None else float("inf")
+
         for fname in file_names:
+            if loaded >= max_samples:
+                break
+
             if fname not in name_to_id:
                 continue
 
@@ -43,17 +49,21 @@ class COCODataset(BaseDataset):
             ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
             anns = self.coco.loadAnns(ann_ids)
 
-            kp = np.zeros((num_keypoints, 3), dtype=np.float32)
+            if not anns or "keypoints" not in anns[0]:
+                continue
 
-            if anns and "keypoints" in anns[0]:
-                raw = anns[0]["keypoints"]
-                if len(raw) == num_keypoints * 3:
-                    kp = np.array(raw, dtype=np.float32).reshape(num_keypoints, 3)
+            raw = anns[0]["keypoints"]
+            if len(raw) != num_keypoints * 3:
+                continue
+
+            kp = np.array(raw, dtype=np.float32).reshape(num_keypoints, 3)
 
             self.images.append(fname)
             self.keypoints.append(kp)
 
-        print(load, self.images)
+            loaded += 1
+
+        # print(load, self.images)
 
     def __len__(self):
         return len(self.images)

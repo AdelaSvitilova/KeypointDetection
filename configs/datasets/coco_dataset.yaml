@@ -1,7 +1,9 @@
 dataset:
   name: coco
   train: "train.csv"
+  train_num_samples: null
   val: "val.csv"
+  val_num_samples: null
   params:
     root_dir: "./data/coco_csv"
     num_keypoints: 17

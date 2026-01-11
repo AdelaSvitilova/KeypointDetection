@@ -3,7 +3,7 @@ from .random_dataset import RandomDataset
 
 from .transforms.keypoints_to_heatmaps import keypoints_to_heatmaps_np
 
-def get_dataset(name, load=None, keypoint_format=None, **kwargs):
+def get_dataset(name, load=None, num_samples=None, keypoint_format=None, **kwargs):
     datasets = {
         "coco": COCODataset,
         "random": RandomDataset
@@ -20,6 +20,6 @@ def get_dataset(name, load=None, keypoint_format=None, **kwargs):
         heatmaps = keypoints_to_heatmaps_np
 
     if load is not None:
-        return DatasetClass(load=load, heatmaps=heatmaps, **kwargs)
+        return DatasetClass(load=load, num_samples=num_samples, heatmaps=heatmaps, **kwargs)
     
-    return DatasetClass(heatmaps=heatmaps, **kwargs)
+    return DatasetClass(num_samples=num_samples, heatmaps=heatmaps, **kwargs)

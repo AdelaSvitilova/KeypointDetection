@@ -1,0 +1,9 @@
+dataset:
+  name: coco
+  train: "train.csv"
+  train_num_samples: 500
+  val: "test.csv"
+  val_num_samples: 250
+  params:
+    root_dir: "./data/coco_full"
+    num_keypoints: 17
