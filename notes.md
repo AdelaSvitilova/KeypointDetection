@@ -20,3 +20,5 @@ Jak spouštět skripty a moct zavčít terminál? Můžu ho prostě jen zavřít
 Já si musela napsat collate funkci, kontrola?
 
 Kde a jak bych ideálně měla řešit resize - do modelu vstupuje 256x256, ale výstupy jsou 64x64.... 
+
+Jak mám škálovat metriky? 

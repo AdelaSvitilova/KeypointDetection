@@ -4,5 +4,6 @@ dataset:
   val: null
   params:
     num_keypoints: 17
+    num_samples: 200
 
 keypoint_format: heatmaps

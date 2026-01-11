@@ -3,7 +3,7 @@ from .base_metric import BaseMetric
 
 class PCK(BaseMetric):
     """Percentage of Correct Keypoints (threshold normalized 0-1)"""
-    def __init__(self, threshold=0.05):
+    def __init__(self, threshold=0.5):
         self.threshold = threshold
         self.correct = 0
         self.total = 0
@@ -15,7 +15,7 @@ class PCK(BaseMetric):
         # Euclidean distance
         dist = np.sqrt(np.sum((preds_xy - targets_xy) ** 2, axis=2))  # (B, K)
 
-        self.correct += np.sum(dist < self.threshold)
+        self.correct += np.sum(dist < self.threshold*50)
         self.total += dist.size
 
     def compute(self):

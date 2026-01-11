@@ -76,37 +76,37 @@ class PytorchTrainer(BaseTrainer):
                     metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy())
 
             epoch_loss = running_loss / len(self.train_dataset)
-            epoch_metrics = {type(m).__name__: m.compute() for m in self.metrics}
-            print(f"Epoch {epoch}/{self.epochs} | Train Loss: {epoch_loss:.4f} | Train Metrics: {epoch_metrics}")
+            epoch_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
-            self.validate(val_loader, epoch)
+            self.model.eval()
+            for metric in self.metrics:
+                metric.reset()
+
+            val_loss = 0.0
+            with torch.no_grad():
+                for item in val_loader:
+                    x_val = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                    y_val = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
+                    y_h_val = y_val if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
+                    
+                    preds_val = self.model(x_val)
+
+                    if self.special_mode=="cut_five_dim" and preds_val.ndim == 5:
+                        preds_val_tmp = preds_val[:, -1]
+                    else:
+                        preds_val_tmp = preds_val
+
+                    
+                    loss_val = self.loss_fn(preds_val, y_h_val)
+                    val_loss += loss_val.item()
+
+                    for metric in self.metrics:
+                        metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy())
+
+            val_loss /= len(self.val_dataset)
+            val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+
+            print(f"Epoch {epoch} | Train Loss: {epoch_loss:.4f} | Train Metrics: {epoch_metrics} | Val Loss: {val_loss:.4f} | Val Metrics: {val_metrics}")
 
     def validate(self, val_loader, epoch):
-        self.model.eval()
-        for metric in self.metrics:
-            metric.reset()
-
-        val_loss = 0.0
-        with torch.no_grad():
-            for item in val_loader:
-                x_val = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
-                y_val = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
-                y_h_val = y_val if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
-                
-                preds_val = self.model(x_val)
-
-                if self.special_mode=="cut_five_dim" and preds_val.ndim == 5:
-                    preds_val_tmp = preds_val[:, -1]
-                else:
-                    preds_val_tmp = preds_val
-
-                
-                loss_val = self.loss_fn(preds_val, y_h_val)
-                val_loss += loss_val.item()
-
-                for metric in self.metrics:
-                    metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy())
-
-        val_loss /= len(self.val_dataset)
-        val_metrics = {type(m).__name__: m.compute() for m in self.metrics}
-        print(f"Epoch {epoch} | Val Loss: {val_loss:.4f} | Val Metrics: {val_metrics}")
+        pass
