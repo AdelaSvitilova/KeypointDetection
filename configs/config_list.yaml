@@ -2,8 +2,8 @@
 configs:
   - configs/base.yaml #Always must be first!
   # setting 1 small data + good model
-  - configs/models/stacked_hourglass_pytorch.yaml
-  - configs/datasets/coco_dataset.yaml
+  # - configs/models/stacked_hourglass_pytorch.yaml
+  # - configs/datasets/coco_dataset.yaml
 
   # setting 2 keypoint
   # - configs/models/test_pytorch.yaml
@@ -14,6 +14,6 @@ configs:
   # - configs/datasets/coco_dataset_full.yaml
 
   # setting 4 random for testing
-  # - configs/models/test_heatmaps_pytorch.yaml
-  # - configs/datasets/random_dataset_heatmaps.yaml
+  - configs/models/test_heatmaps_pytorch.yaml
+  - configs/datasets/random_dataset_heatmaps.yaml
   

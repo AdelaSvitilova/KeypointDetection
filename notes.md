@@ -25,7 +25,7 @@ Jak mám škálovat metriky?
 
 parametr save every epoch? 
 
-Logování něčeho?
+Logování něčeho? Mám použít tensorboard? Není to zbytečně komplikované, zístane to někde? Logging kniohovna? 
 
 Epoch 1 | Train Loss: 0.0043 | Train Metrics: {'PCKHeatmaps': '0.0112'} | Val Loss: 949922044051.4561 | Val Metrics: {'PCKHeatmaps': '0.0064'}
 Epoch 2 | Train Loss: 0.0004 | Train Metrics: {'PCKHeatmaps': '0.0112'} | Val Loss: 876201.6160 | Val Metrics: {'PCKHeatmaps': '0.0052'}
