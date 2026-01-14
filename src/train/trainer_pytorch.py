@@ -147,6 +147,9 @@ class PytorchTrainer(BaseTrainer):
         torch.save(checkpoint, path)
 
     def continue_train(self, checkpoint_name):
+        if checkpoint_name is None:
+            raise ValueError("Checkpoint path was not specified.")
+
         path = self.checkpoint_dir / checkpoint_name
 
         checkpoint = torch.load(path, map_location=self.device)

@@ -49,12 +49,16 @@ def main():
         val_dataset=val_dataset,
         loss_fn=loss_fn,
         metrics=metrics,
+        experiment_name=cfg["experiment"]["name"],
         keypoint_format=cfg["keypoint_format"],
         special_mode=cfg["model"]["special_mode"],
         **cfg["train"]
     )
-    trainer.train()
-    # trainer.continue_train("epoch_20.pt")
+
+    if cfg["experiment"]["continue_from"] is None:
+        trainer.train()
+    else:
+        trainer.continue_train(cfg["experiment"]["continue_from"])
 
 if __name__ == "__main__":
     main()

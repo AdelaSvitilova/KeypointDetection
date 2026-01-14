@@ -1,5 +1,9 @@
 # Basic configuration, can be overwritten by other files
 
+experiment:
+  name: 14_1_26_e1
+  continue_from: epoch_10.pt  # null or checkpoint (epoch_10.pt/best.pt)
+
 model:
   name: test_model_heatmap_pytorch #test_model_heatmap_pytorch #stacked_hourglass_pytorch #test_model_heatmap_keras
   framework: pytorch
@@ -26,4 +30,4 @@ metrics:
 train:
   batch_size: 2
   lr: 0.01
-  epochs: 50
+  epochs: 20
