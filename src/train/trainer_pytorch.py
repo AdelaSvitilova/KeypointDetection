@@ -49,6 +49,8 @@ class PytorchTrainer(BaseTrainer):
 
         best_val_loss = best_val_loss
 
+        log_file = self.checkpoint_dir / "training.log"
+
         for epoch in range(start_epoch + 1, self.epochs + 1):
             self.model.train()
             for metric in self.metrics:
@@ -82,8 +84,8 @@ class PytorchTrainer(BaseTrainer):
                 for metric in self.metrics:
                     metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy())
 
-            epoch_loss = running_loss / len(self.train_dataset)
-            epoch_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+            train_loss = running_loss / len(self.train_dataset)
+            train_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
             self.model.eval()
             for metric in self.metrics:
@@ -128,7 +130,16 @@ class PytorchTrainer(BaseTrainer):
                     )
                 best_val_loss = val_loss
 
-            print(f"Epoch {epoch} | Train Loss: {epoch_loss:.3e} | Train Metrics: {epoch_metrics} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics}")
+            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics}")
+
+            with open(log_file, "a") as f:
+                f.write(
+                    f"Epoch {epoch:03d} | "
+                    f"train_loss={train_loss:.3e} | "
+                    f"train_loss={train_metrics} | "
+                    f"val_loss={val_loss:.3e} | "
+                    f"val_loss={val_metrics}\n"
+                )
 
     def validate(self, val_loader, epoch):
         pass
