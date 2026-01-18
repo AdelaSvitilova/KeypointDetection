@@ -136,9 +136,9 @@ class PytorchTrainer(BaseTrainer):
                 f.write(
                     f"Epoch {epoch:03d} | "
                     f"train_loss={train_loss:.3e} | "
-                    f"train_loss={train_metrics} | "
+                    f"train_metrics={train_metrics} | "
                     f"val_loss={val_loss:.3e} | "
-                    f"val_loss={val_metrics}\n"
+                    f"val_metrics={val_metrics}\n"
                 )
 
     def validate(self, val_loader, epoch):
