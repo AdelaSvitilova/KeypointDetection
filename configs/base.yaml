@@ -30,4 +30,4 @@ metrics:
 train:
   batch_size: 2
   lr: 0.01
-  epochs: 2
+  epochs: 10

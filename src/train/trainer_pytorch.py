@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from .base_trainer import BaseTrainer
 from .utils import collate_fn
 from pathlib import Path
+import time
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -52,6 +53,7 @@ class PytorchTrainer(BaseTrainer):
         log_file = self.checkpoint_dir / "training.log"
 
         for epoch in range(start_epoch + 1, self.epochs + 1):
+            start = time.time()
             self.model.train()
             for metric in self.metrics:
                 metric.reset()
@@ -84,6 +86,13 @@ class PytorchTrainer(BaseTrainer):
                 for metric in self.metrics:
                     metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy())
 
+            end = time.time()
+
+            hours, remainder = divmod(end-start, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            train_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
+
             train_loss = running_loss / len(self.train_dataset)
             train_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
@@ -92,6 +101,7 @@ class PytorchTrainer(BaseTrainer):
                 metric.reset()
 
             val_loss = 0.0
+            start = time.time()
             with torch.no_grad():
                 for item in val_loader:
                     x_val = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
@@ -112,10 +122,17 @@ class PytorchTrainer(BaseTrainer):
                     for metric in self.metrics:
                         metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy())
 
+            end = time.time()
+
+            hours, remainder = divmod(end-start, 3600)
+            minutes, seconds = divmod(remainder, 60)
+
+            val_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
+
             val_loss /= len(self.val_dataset)
             val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
-            if (epoch) % 10 == 0:
+            if (epoch) % 1 == 0:
                 self.save_checkpoint(
                     epoch,
                     best_val_loss, 
@@ -130,7 +147,7 @@ class PytorchTrainer(BaseTrainer):
                     )
                 best_val_loss = val_loss
 
-            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics}")
+            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics} | Val Time: {val_time}")
 
             with open(log_file, "a") as f:
                 f.write(
