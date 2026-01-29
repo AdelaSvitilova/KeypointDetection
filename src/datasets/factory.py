@@ -1,5 +1,6 @@
 from .coco_dataset import COCODataset
 from .random_dataset import RandomDataset
+from .images_to_predict import ImageDataset
 from .transforms.keypoints_to_heatmaps import keypoints_to_heatmaps_np
 
 
@@ -37,6 +38,7 @@ def get_dataset(
     datasets = {
         "coco": COCODataset,
         "random": RandomDataset,
+        "images": ImageDataset,
     }
 
     if name not in datasets:

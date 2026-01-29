@@ -158,9 +158,6 @@ class PytorchTrainer(BaseTrainer):
                     f"val_metrics={val_metrics}\n"
                 )
 
-    def validate(self, val_loader, epoch):
-        pass
-
     def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):
         checkpoint = {
             "epoch": epoch,
@@ -174,7 +171,7 @@ class PytorchTrainer(BaseTrainer):
 
         torch.save(checkpoint, path)
 
-    def continue_train(self, checkpoint_name):
+    def load_model_from_checkpoint(self, checkpoint_name):
         if checkpoint_name is None:
             raise ValueError("Checkpoint path was not specified.")
 
@@ -188,9 +185,29 @@ class PytorchTrainer(BaseTrainer):
         if hasattr(self, "scheduler") and "scheduler_state_dict" in checkpoint:
             self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
+        epoch = checkpoint.get('epoch', 0)
         start_epoch = checkpoint["epoch"]
         best_val_loss = checkpoint["best_val_loss"]
 
-        print(f"Checkpoint načten: epoch {checkpoint.get('epoch', 0)}. Pokračuji od epochy {start_epoch + 1}.")
+        return epoch, start_epoch, best_val_loss
+
+
+    def continue_train(self, checkpoint_name):
+        epoch, start_epoch, best_val_loss = self.load_model_from_checkpoint(checkpoint_name)
+
+        print(f"Checkpoint načten: epoch {epoch}. Pokračuji od epochy {start_epoch + 1}.")
 
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
+
+    def predict(self, data_loader, batch_size=1): 
+        _ = self.load_model_from_checkpoint("best.pt")
+        #data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+        
+        self.model.eval()
+        with torch.no_grad():
+            for item in data_loader:
+                images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                images = images.to(self.device)
+                preds = self.model(images)
+                yield item, preds.cpu().numpy()
+

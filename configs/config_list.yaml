@@ -10,10 +10,10 @@ configs:
   # - configs/datasets/random_dataset_keypoints.yaml
 
   # setting 3 full dataset
-  # - configs/models/stacked_hourglass_pytorch.yaml
-  # - configs/datasets/coco_dataset_full.yaml
+  - configs/models/stacked_hourglass_pytorch.yaml
+  - configs/datasets/coco_dataset_full.yaml
 
   # setting 4 random for testing
-  - configs/models/test_heatmaps_pytorch.yaml
-  - configs/datasets/random_dataset_heatmaps.yaml
+  # - configs/models/test_heatmaps_pytorch.yaml
+  # - configs/datasets/random_dataset_heatmaps.yaml
   

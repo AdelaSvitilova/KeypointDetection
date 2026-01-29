@@ -41,15 +41,21 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def validate(self, val_loader, epoch):
+    def predict(self, val_loader, epoch):
         """
-        Validate the model on the validation dataset.
+        Run inference on a dataset and return model predictions.
+
+        This method performs forward passes only (no loss computation,
+        no backpropagation, no metric updates).
 
         Must be implemented by a framework-specific trainer subclass.
 
         Parameters:
-            val_loader: DataLoader or iterator over the validation dataset.
-            epoch (int): Current epoch number (optional, for logging purposes).
+            data_loader: DataLoader or iterable providing input batches.
+            epoch (int, optional): Current epoch number (for logging or tracking).
+
+        Returns:
+            predictions: Model outputs aggregated over the entire dataset.
         """
         pass
 

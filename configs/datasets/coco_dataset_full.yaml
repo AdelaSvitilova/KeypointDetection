@@ -1,14 +1,22 @@
 dataset:
   name: coco
   train: "train.csv"
-  train_num_samples: null
+  train_num_samples: 10
   val: "test.csv"
-  val_num_samples: null
+  val_num_samples: 10
   params:
     root_dir: "./data/coco_full"
     num_keypoints: 17
 
+predict:
+  model: null # null for best or model epoch_10.pt
+  images_list: "train.csv"
+  num_samples: 10
+  batch_size: 1
+  params:
+    root_dir: "./data/coco_full"
+
 train:
-  batch_size: 64
+  batch_size: 10
   lr: 0.01
-  epochs: 50
+  epochs: 500

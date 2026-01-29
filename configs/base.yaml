@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: 16_1_26_e1
+  name: COCO_250
   continue_from: null  # null or checkpoint (epoch_10.pt/best.pt)
 
 model:
@@ -28,6 +28,13 @@ metrics:
   names: ["PCK"]
 
 train:
-  batch_size: 2
+  batch_size: 64
   lr: 0.01
-  epochs: 10
+  epochs: 500
+
+predict:
+  model: null # null for best or model epoch_10.pt
+  images_list: "val.csv"
+  batch_size: 1
+  params:
+    root_dir: "./data/coco_csv"
