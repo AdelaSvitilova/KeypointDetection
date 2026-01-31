@@ -1,9 +1,9 @@
 dataset:
   name: coco
   train: "train.csv"
-  train_num_samples: 10
+  train_num_samples: 2000
   val: "test.csv"
-  val_num_samples: 10
+  val_num_samples: 500
   params:
     root_dir: "./data/coco_full"
     num_keypoints: 17
@@ -13,8 +13,12 @@ predict:
   images_list: "train.csv"
   num_samples: 10
   batch_size: 1
+  annotation_label: annotations_label.txt
   params:
     root_dir: "./data/coco_full"
+    input_size:
+      - 256
+      - 256
 
 train:
   batch_size: 10

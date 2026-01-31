@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import cv2
 
 from src.utils.config import load_config
 from src.models.factory import get_model
@@ -12,27 +13,111 @@ from src.train.factory import get_trainer
 # ---------------------------
 # Helper functions
 # ---------------------------
-def visualize_keypoints(image, keypoints, fname=None):
+def visualize_heatmaps_grid(image, heatmaps, path_to_save, fname="heatmaps_grid.png", annotations_label=None):
     """
-    Visualize a single image with keypoints overlay.
-    image: np.ndarray or torch.Tensor [C, H, W] in [0,1]
-    keypoints: np.ndarray [num_keypoints, 2]
+    image: [C, 256, 256]
+    heatmaps: [N, 64, 64]
     """
+
     if torch.is_tensor(image):
         image = image.cpu().numpy()
-    image = image.transpose(1, 2, 0)  # CHW -> HWC
+    if torch.is_tensor(heatmaps):
+        heatmaps = heatmaps.cpu().numpy()
+
+    # image -> HWC
+    image = image.transpose(1, 2, 0)
     image = np.clip(image, 0, 1)
+    H, W = image.shape[:2]
 
-    plt.imshow(image)
+    N = heatmaps.shape[0]
+    cols = min(5, N)
+    rows = int(np.ceil(N / cols))
 
-    # keypoints
-    for x, y, *rest in keypoints:
-        plt.scatter(x, y, c="red", s=20)
+    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
+    axes = np.array(axes).reshape(-1)
 
-    if fname:
-        plt.title(fname)
-    plt.axis("off")
-    plt.show()
+    for i in range(N):
+        ax = axes[i]
+        ax.imshow(image)
+
+        # 🔑 tady je fix: VŽDY jen jedna heatmapa [64,64]
+        hm = heatmaps[i]
+
+        # resize 64x64 → 256x256
+        hm = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
+
+        hm = np.clip(hm, 0, None)
+        if hm.max() > 0:
+            hm = hm / hm.max()
+
+        ax.imshow(hm, cmap="turbo", alpha=0.4)
+        ax.set_title(annotations_label[i])
+        ax.axis("off")
+
+    # vypnout prázdné subploty
+    for j in range(i + 1, len(axes)):
+        axes[j].axis("off")
+
+    os.makedirs(path_to_save, exist_ok=True)
+    plt.savefig(os.path.join(path_to_save, f"g_{fname}"), bbox_inches="tight")
+    plt.close(fig)
+
+def visualize_heatmaps_combined(
+    image,
+    heatmaps,
+    path_to_save,
+    fname="heatmaps_combined.png",
+    show_points=True,
+    threshold=0.05
+):
+    """
+    image:    [C,H,W] nebo [H,W,3]
+    heatmaps: [N,64,64]
+    """
+
+    if torch.is_tensor(image):
+        image = image.cpu().numpy()
+    if torch.is_tensor(heatmaps):
+        heatmaps = heatmaps.cpu().numpy()
+
+    # image -> HWC
+    if image.ndim == 3 and image.shape[0] in (1, 3):
+        image = image.transpose(1, 2, 0)
+    image = np.clip(image, 0, 1)
+    H, W = image.shape[:2]
+
+    # složení heatmap
+    combined = np.zeros((H, W), dtype=np.float32)
+
+    for hm in heatmaps:
+        hm = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
+        hm = np.clip(hm, 0, None)
+        if hm.max() < threshold:
+            continue  # přeskoč heatmapy, kde není žádný signál
+        if hm.max() > 0:
+            hm = hm / hm.max()
+        combined += hm
+
+    # normalizace výsledku
+    if combined.max() > 0:
+        combined /= combined.max()
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(image)
+    ax.imshow(combined, cmap="turbo", alpha=0.4)
+
+    # 🔴 vykreslení bodů maxima
+    if show_points:
+        for hm in heatmaps:
+            hm = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
+            y, x = np.unravel_index(np.argmax(hm), hm.shape)
+            ax.scatter(x, y, c="red", s=6)
+
+    ax.axis("off")
+
+    os.makedirs(path_to_save, exist_ok=True)
+    plt.savefig(os.path.join(path_to_save, fname), bbox_inches="tight")
+    plt.close(fig)
 
 
 def numpy_loader(dataset, batch_size=1):
@@ -67,6 +152,22 @@ def main():
     )
     print(f"Dataset loaded: {len(dataset)} images.")
 
+    # cesta k txt souboru
+    txt_path = os.path.join(cfg["predict"]["params"]["root_dir"],cfg["predict"]["annotation_label"])
+
+    # vytvoříme list pro uložení
+    annotations_label = []
+
+    # otevření souboru a čtení řádek po řádku
+    with open(txt_path, "r") as f:
+        for line in f:
+            line = line.strip()        # odstraní \n a bílé znaky
+            if line:                   # ignoruje prázdné řádky
+                annotations_label.append(line)
+
+    # kontrola
+    print(annotations_label)
+
     # Wrap dataset in simple NumPy loader
     loader = numpy_loader(dataset, batch_size=cfg["predict"]["batch_size"])
 
@@ -84,10 +185,14 @@ def main():
     )
     print("Trainer initialized.")
 
+    path_to_save = os.path.join("results",cfg["experiment"]["name"], "prediction")
+    os.makedirs(path_to_save, exist_ok=True)
+
     # Predict & visualize
     for batch, preds in trainer.predict(loader):
         for img, pred, fname in zip(batch["image"], preds, batch["filename"]):
-            visualize_keypoints(img, pred, fname)
+            visualize_heatmaps_grid(img, pred[0], path_to_save, fname, annotations_label=annotations_label)
+            visualize_heatmaps_combined(img, pred[0], path_to_save, fname, show_points=True)
 
 
 if __name__ == "__main__":
