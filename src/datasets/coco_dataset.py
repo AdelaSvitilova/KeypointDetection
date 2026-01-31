@@ -145,4 +145,5 @@ class COCODataset(BaseDataset):
             "image": image,
             "heatmaps": heatmaps,
             "keypoints": keypoints,
+            "filename": self.images[idx],
         }

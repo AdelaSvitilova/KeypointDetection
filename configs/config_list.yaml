@@ -16,4 +16,6 @@ configs:
   # setting 4 random for testing
   # - configs/models/test_heatmaps_pytorch.yaml
   # - configs/datasets/random_dataset_heatmaps.yaml
+
+  - configs/predicts/coco_dataset.yaml
   

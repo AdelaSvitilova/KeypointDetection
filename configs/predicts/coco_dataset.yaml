@@ -1,0 +1,13 @@
+predict:
+  name: coco
+  model: null # null for best or model epoch_10.pt
+  images_list: "test.csv"
+  num_samples: 10
+  batch_size: 1
+  annotation_label: annotations_label.txt
+  metrics: ["PCK_heatmaps"]
+  params:
+    root_dir: "./data/coco_full"
+    input_size:
+      - 256
+      - 256

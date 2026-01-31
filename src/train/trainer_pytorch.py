@@ -200,7 +200,7 @@ class PytorchTrainer(BaseTrainer):
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
     def predict(self, data_loader, batch_size=1): 
-        _ = self.load_model_from_checkpoint("best.pt")
+        self.load_model_from_checkpoint("best.pt")
         #data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
         
         self.model.eval()

@@ -3,10 +3,12 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import cv2
+import csv
 
 from src.utils.config import load_config
 from src.models.factory import get_model
 from src.datasets.factory import get_dataset
+from src.metrics.factory import get_metrics
 from src.train.factory import get_trainer
 
 
@@ -106,7 +108,7 @@ def visualize_heatmaps_combined(
     ax.imshow(image)
     ax.imshow(combined, cmap="turbo", alpha=0.4)
 
-    # 🔴 vykreslení bodů maxima
+    # vykreslení bodů maxima
     if show_points:
         for hm in heatmaps:
             hm = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
@@ -120,16 +122,25 @@ def visualize_heatmaps_combined(
     plt.close(fig)
 
 
-def numpy_loader(dataset, batch_size=1):
+def batch_loader(dataset, batch_size=1):
     """
-    Simple generator for NumPy-based dataset.
-    Yields batches of size `batch_size`.
+    Framework-agnostic generator for any dataset with __getitem__.
+    Yields dictionaries with batch_size samples stacked.
     """
-    for i in range(0, len(dataset), batch_size):
-        batch_samples = [dataset[j] for j in range(i, min(i + batch_size, len(dataset)))]
-        images = np.stack([s["image"] for s in batch_samples])
-        filenames = [s["filename"] for s in batch_samples]
-        yield {"image": images, "filename": filenames}
+    n = len(dataset)
+    for i in range(0, n, batch_size):
+        batch_samples = [dataset[j] for j in range(i, min(i + batch_size, n))]
+
+        batch = {}
+        # stack all keys that are np.ndarray
+        for key in batch_samples[0]:
+            values = [s[key] for s in batch_samples]
+            if isinstance(values[0], np.ndarray):
+                batch[key] = np.stack(values)
+            else:
+                batch[key] = values  # e.g., filename or metadata
+
+        yield batch
 
 # ---------------------------
 # Main
@@ -138,6 +149,7 @@ def main():
     # Load configuration
     cfg = load_config("configs/config_list.yaml")
     print("Configuration loaded.")
+    print(cfg)
 
     # Create model
     model = get_model(cfg["model"]["name"], **cfg["model"]["params"])
@@ -145,7 +157,7 @@ def main():
 
     # Load dataset (NumPy-based)
     dataset = get_dataset(
-        name="images",
+        name=cfg["predict"]["name"],
         load=cfg["predict"]["images_list"],
         num_samples=cfg["predict"]["num_samples"],
         **cfg["predict"]["params"]
@@ -165,11 +177,12 @@ def main():
             if line:                   # ignoruje prázdné řádky
                 annotations_label.append(line)
 
-    # kontrola
-    print(annotations_label)
-
     # Wrap dataset in simple NumPy loader
-    loader = numpy_loader(dataset, batch_size=cfg["predict"]["batch_size"])
+    loader = batch_loader(dataset, batch_size=cfg["predict"]["batch_size"])
+
+    # === Loss and metrics ===
+    metrics = get_metrics(cfg["predict"]["metrics"])
+    print(f"Metrics: {cfg['predict']['metrics']}")
 
     # Create trainer (needed if you have special predict logic)
     trainer = get_trainer(
@@ -188,11 +201,45 @@ def main():
     path_to_save = os.path.join("results",cfg["experiment"]["name"], "prediction")
     os.makedirs(path_to_save, exist_ok=True)
 
-    # Predict & visualize
+    results = []
+
     for batch, preds in trainer.predict(loader):
-        for img, pred, fname in zip(batch["image"], preds, batch["filename"]):
+        for img, pred, fname, keypoints in zip(
+            batch["image"], preds, batch["filename"], batch["keypoints"]
+        ):
+            # Vizualizace
             visualize_heatmaps_grid(img, pred[0], path_to_save, fname, annotations_label=annotations_label)
             visualize_heatmaps_combined(img, pred[0], path_to_save, fname, show_points=True)
+
+            # Výpočet metrik
+            metrics_values = {}
+            for m in metrics:
+                m.reset()
+                m.update(np.expand_dims(pred[0], axis=0), np.expand_dims(keypoints, axis=0))
+                metrics_values[type(m).__name__] = m.compute()
+
+            # Přidáme filename
+            row = {"filename": fname}
+            row.update(metrics_values)
+            results.append(row)
+
+    # Seřazení podle první metriky
+    first_metric = list(metrics_values.keys())[0]
+    results_sorted = sorted(results, key=lambda x: x[first_metric], reverse=True)  # nejvyšší nahoře
+
+    # Uložení do CSV
+    csv_path = f"{path_to_save}/metrics_sorted.csv"
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # hlavička
+        header = ["filename"] + list(metrics_values.keys())
+        writer.writerow(header)
+
+        # řádky
+        for row in results_sorted:
+            writer.writerow([row[h] for h in header])
+
+    print(f"Results saved to {csv_path}")
 
 
 if __name__ == "__main__":
