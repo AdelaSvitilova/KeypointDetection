@@ -17,6 +17,7 @@ class PytorchTrainer(BaseTrainer):
         batch_size=16,
         epochs=10,
         lr=0.01,
+        save_every_epoch=10,
         experiment_name="exp0",
         keypoint_format="keypoints",
         special_mode=None,
@@ -43,6 +44,8 @@ class PytorchTrainer(BaseTrainer):
 
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+        self.save_every_epoch = save_every_epoch
 
     def train(self, start_epoch=0, best_val_loss=float('inf')):
         train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
@@ -132,7 +135,7 @@ class PytorchTrainer(BaseTrainer):
             val_loss /= len(self.val_dataset)
             val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
-            if (epoch) % 1 == 0:
+            if (epoch) % self.save_every_epoch == 0:
                 self.save_checkpoint(
                     epoch,
                     best_val_loss, 

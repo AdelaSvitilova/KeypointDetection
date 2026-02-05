@@ -1,8 +1,8 @@
 predict:
   name: coco
   model: null # null for best or model epoch_10.pt
-  images_list: "train.csv"
-  num_samples: 2000
+  images_list: "test.csv"
+  num_samples: 100
   batch_size: 1
   annotation_label: annotations_label.txt
   metrics: ["PCK_heatmaps"]

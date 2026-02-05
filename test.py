@@ -186,7 +186,7 @@ def main():
 
     # Create trainer (needed if you have special predict logic)
     trainer = get_trainer(
-        backend=cfg["model"]["framework"],
+        backend=cfg["model"]["backend"],
         model=model,
         train_dataset=None,
         val_dataset=None,

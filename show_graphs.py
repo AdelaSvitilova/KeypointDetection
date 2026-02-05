@@ -1,7 +1,7 @@
 import re
 import matplotlib.pyplot as plt
 
-exp_name = "exp0_2000_tv"
+exp_name = "full_dataset"
 log_file = f"results/{exp_name}/training.log"
 
 epochs = []

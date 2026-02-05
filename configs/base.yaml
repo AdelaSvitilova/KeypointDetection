@@ -1,25 +1,8 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: exp0_2000_tv
-  continue_from: null  # null or checkpoint (epoch_10.pt/best.pt)
-
-model:
-  name: test_model_heatmap_pytorch #test_model_heatmap_pytorch #stacked_hourglass_pytorch #test_model_heatmap_keras
-  framework: pytorch
-  special_mode: cut_five_dim
-  params:
-    input_channels: 3
-    num_keypoints: 17
-    
-keypoint_format: heatmaps
-
-dataset:
-  name: random
-  train: null
-  val: null
-  params:
-    num_keypoints: 17
+  name: test
+  continue_from: epoch_10.pt  # null or checkpoint (epoch_10.pt/best.pt)
 
 loss:
   name: MSE
@@ -31,10 +14,5 @@ train:
   batch_size: 64
   lr: 0.01
   epochs: 500
-
-predict:
-  model: null # null for best or model epoch_10.pt
-  images_list: "val.csv"
-  batch_size: 1
-  params:
-    root_dir: "./data/coco_csv"
+  save_every_epoch: 10
+  device: null #"cuda:4"

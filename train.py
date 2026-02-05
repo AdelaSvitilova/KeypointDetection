@@ -59,13 +59,13 @@ def main():
     print(f"Validation dataset loaded: {len(val_dataset)} samples")
 
     # === Loss and metrics ===
-    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["framework"])
+    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["backend"])
     metrics = get_metrics(cfg["metrics"]["names"])
     print(f"Loss function: {cfg['loss']['name']}, Metrics: {cfg['metrics']['names']}")
 
     # === Trainer creation ===
     trainer = get_trainer(
-        backend=cfg["model"]["framework"],
+        backend=cfg["model"]["backend"],
         model=model,
         train_dataset=train_dataset,
         val_dataset=val_dataset,
@@ -76,7 +76,7 @@ def main():
         special_mode=cfg["model"]["special_mode"],
         **cfg["train"]
     )
-    print(f"Trainer initialized for backend '{cfg['model']['framework']}'")
+    print(f"Trainer initialized for backend '{cfg['model']['backend']}'")
 
     # === Start training ===
     if cfg["experiment"]["continue_from"] is None:

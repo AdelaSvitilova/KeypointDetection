@@ -7,8 +7,3 @@ dataset:
   params:
     root_dir: "./data/coco_full"
     num_keypoints: 17
-
-train:
-  batch_size: 10
-  lr: 0.01
-  epochs: 500
