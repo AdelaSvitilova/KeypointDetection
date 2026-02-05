@@ -7,3 +7,4 @@ dataset:
   params:
     root_dir: "./data/coco_full"
     num_keypoints: 17
+    annotation_file: "annotations.json"

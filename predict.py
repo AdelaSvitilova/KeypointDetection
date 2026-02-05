@@ -27,7 +27,7 @@ def main():
 
     # === Trainer creation ===
     trainer = get_trainer(
-        backend=cfg["model"]["framework"],
+        backend=cfg["model"]["backend"],
         model=model,
         train_dataset=None,
         val_dataset=None,
@@ -38,7 +38,7 @@ def main():
         special_mode=cfg["model"]["special_mode"],
         **cfg["train"]
     )
-    print(f"Trainer initialized for backend '{cfg['model']['framework']}'")
+    print(f"Trainer initialized for backend '{cfg['model']['backend']}'")
 
     for preds in trainer.predict(dataset, cfg["predict"]["batch_size"]):
         print(preds)

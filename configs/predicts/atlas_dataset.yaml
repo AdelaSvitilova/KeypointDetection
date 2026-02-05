@@ -1,0 +1,14 @@
+predict:
+  name: atlas
+  model: null # null for best or model epoch_10.pt
+  images_list: "val.csv"
+  num_samples: 100
+  batch_size: 2
+  annotation_label: annotation_label.txt
+  metrics: ["PCK_heatmaps"]
+  params:
+    root_dir: "./data/atlas"
+    annotation_file: pose_dataset.csv
+    input_size:
+      - 256
+      - 256

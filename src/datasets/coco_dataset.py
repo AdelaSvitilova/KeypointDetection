@@ -34,9 +34,10 @@ class COCODataset(BaseDataset):
         num_keypoints=17,
         input_size=(256, 256),
         output_size=(64, 64),
+        annotation_file='annotations.json',
     ):
         # Paths to annotations, images, and CSV load file
-        ann_file = os.path.join(root_dir, 'annotations.json')
+        ann_file = os.path.join(root_dir, annotation_file)
         self.img_dir = os.path.join(root_dir, 'images')
         load_file = os.path.join(root_dir, load)
 

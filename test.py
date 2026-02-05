@@ -177,6 +177,8 @@ def main():
             if line:                   # ignoruje prázdné řádky
                 annotations_label.append(line)
 
+    print(annotations_label)
+
     # Wrap dataset in simple NumPy loader
     loader = batch_loader(dataset, batch_size=cfg["predict"]["batch_size"])
 

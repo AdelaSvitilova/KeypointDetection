@@ -3,7 +3,8 @@ configs:
   - configs/base.yaml #Always must be first!
   # setting 1 small data + good model
   - configs/models/stacked_hourglass_pytorch.yaml
-  - configs/datasets/coco_dataset.yaml
+  # - configs/datasets/coco_dataset.yaml
+  - configs/datasets/atlas_dataset.yaml
 
   # setting 2 keypoint
   # - configs/models/test_pytorch.yaml
@@ -17,5 +18,5 @@ configs:
   # - configs/models/test_heatmaps_pytorch.yaml
   # - configs/datasets/random_dataset_heatmaps.yaml
 
-  - configs/predicts/coco_dataset.yaml
+  - configs/predicts/atlas_dataset.yaml
   

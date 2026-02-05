@@ -1,0 +1,10 @@
+dataset:
+  name: atlas
+  train: "train.csv"
+  train_num_samples: null
+  val: "val.csv"
+  val_num_samples: null
+  params:
+    root_dir: "./data/atlas"
+    num_keypoints: 23
+    annotation_file: pose_dataset.csv

@@ -4,10 +4,10 @@ model:
   special_mode: cut_five_dim
   params:
     input_channels: 3
-    num_keypoints: 17
+    num_keypoints: 23
     nstack: 2
     inp_dim: 255
-    oup_dim: 17
+    oup_dim: 23
 
 keypoint_format: heatmaps
 
