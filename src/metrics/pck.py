@@ -15,7 +15,7 @@ class PCK(BaseMetric):
         # Euclidean distance
         dist = np.sqrt(np.sum((preds_xy - targets_xy) ** 2, axis=2))  # (B, K)
 
-        self.correct += np.sum(dist < self.threshold*50)
+        self.correct += np.sum(dist < self.threshold*10)
         self.total += dist.size
 
     def compute(self):

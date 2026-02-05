@@ -1,7 +1,7 @@
 import re
 import matplotlib.pyplot as plt
 
-exp_name = "full_dataset"
+exp_name = "atlas_test"
 log_file = f"results/{exp_name}/training.log"
 
 epochs = []
@@ -34,7 +34,7 @@ plt.plot(epochs, train_losses, label="Train loss")
 plt.plot(epochs, val_losses, label="Val loss")
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
-plt.xlim(10,200)
+plt.xlim(10,100)
 plt.ylim(0, 0.00013)
 plt.title("Training vs Validation Loss")
 plt.legend()
@@ -49,7 +49,7 @@ plt.plot(epochs, train_pck, label="Train PCK")
 plt.plot(epochs, val_pck, label="Val PCK")
 plt.xlabel("Epoch")
 plt.ylabel("PCK")
-plt.xlim(0,200)
+plt.xlim(0,100)
 plt.title("Training vs Validation PCK")
 plt.legend()
 plt.grid(True)
