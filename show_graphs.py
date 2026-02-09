@@ -1,7 +1,7 @@
 import re
 import matplotlib.pyplot as plt
 
-exp_name = "atlas_test"
+exp_name = "atlas_test_pc"
 log_file = f"results/{exp_name}/training.log"
 
 epochs = []
@@ -9,13 +9,15 @@ train_losses = []
 val_losses = []
 train_pck = []
 val_pck = []
+lr=[]
 
 pattern = re.compile(
     r"Epoch\s+(\d+).*?"
     r"train_loss=([0-9.eE+-]+).*?"
     r"train_metrics=\{'PCKHeatmaps':\s*'([0-9.eE+-]+)'\}.*?"
     r"val_loss=([0-9.eE+-]+).*?"
-    r"val_metrics=\{'PCKHeatmaps':\s*'([0-9.eE+-]+)'\}"
+    r"val_metrics=\{'PCKHeatmaps':\s*'([0-9.eE+-]+)'\}.*?"
+    r"lr=([0-9.eE+-]+)"
 )
 
 with open(log_file, "r") as f:
@@ -27,6 +29,7 @@ with open(log_file, "r") as f:
             train_pck.append(float(match.group(3)))
             val_losses.append(float(match.group(4)))
             val_pck.append(float(match.group(5)))
+            lr.append(float(match.group(6)))
 
 # ===== Graf 1: Loss =====
 plt.figure()
@@ -34,13 +37,13 @@ plt.plot(epochs, train_losses, label="Train loss")
 plt.plot(epochs, val_losses, label="Val loss")
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
-plt.xlim(10,100)
-plt.ylim(0, 0.00013)
+plt.xlim(10,epochs[-1])
+#plt.ylim(0, 0.00002)
 plt.title("Training vs Validation Loss")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"results/{exp_name}/Loss")
+plt.savefig(f"results/{exp_name}/Loss.png")
 plt.show()
 
 # ===== Graf 2: PCK =====
@@ -49,10 +52,23 @@ plt.plot(epochs, train_pck, label="Train PCK")
 plt.plot(epochs, val_pck, label="Val PCK")
 plt.xlabel("Epoch")
 plt.ylabel("PCK")
-plt.xlim(0,100)
+plt.xlim(0,epochs[-1])
 plt.title("Training vs Validation PCK")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"results/{exp_name}/PCK")
+plt.savefig(f"results/{exp_name}/PCK.png")
+plt.show()
+
+# ===== Graf 2: lr =====
+plt.figure()
+plt.plot(epochs, lr, label="lr")
+plt.xlabel("Epoch")
+plt.ylabel("lr")
+plt.xlim(0,epochs[-1])
+plt.title("Learning rate")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(f"results/{exp_name}/lr.png")
 plt.show()

@@ -41,6 +41,7 @@ class PytorchTrainer(BaseTrainer):
 
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=50, eta_min=1e-6)
 
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -135,6 +136,8 @@ class PytorchTrainer(BaseTrainer):
             val_loss /= len(self.val_dataset)
             val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
 
+            self.scheduler.step()
+            
             if (epoch) % self.save_every_epoch == 0:
                 self.save_checkpoint(
                     epoch,
@@ -150,7 +153,7 @@ class PytorchTrainer(BaseTrainer):
                     )
                 best_val_loss = val_loss
 
-            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics} | Val Time: {val_time}")
+            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics} | Val Time: {val_time} | lr: {self.optimizer.param_groups[0]['lr']:.3e}")
 
             with open(log_file, "a") as f:
                 f.write(
@@ -159,8 +162,9 @@ class PytorchTrainer(BaseTrainer):
                     f"train_metrics={train_metrics} | "
                     f"train_time={train_time} | "
                     f"val_loss={val_loss:.3e} | "
-                    f"val_time={val_time} |"
-                    f"val_metrics={val_metrics}\n"
+                    f"val_time={val_time} | "
+                    f"val_metrics={val_metrics} | "
+                    f"lr={self.optimizer.param_groups[0]['lr']:.3e}\n"
                 )
 
     def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):

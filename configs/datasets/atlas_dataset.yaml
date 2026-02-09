@@ -5,6 +5,6 @@ dataset:
   val: "val.csv"
   val_num_samples: null
   params:
-    root_dir: "./data/atlas"
+    root_dir: "./data/atlas_full"
     num_keypoints: 23
     annotation_file: pose_dataset.csv

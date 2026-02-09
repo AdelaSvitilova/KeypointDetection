@@ -7,7 +7,7 @@ predict:
   annotation_label: annotation_label.txt
   metrics: ["PCK_heatmaps"]
   params:
-    root_dir: "./data/atlas"
+    root_dir: "./data/atlas_full"
     annotation_file: pose_dataset.csv
     input_size:
       - 256
