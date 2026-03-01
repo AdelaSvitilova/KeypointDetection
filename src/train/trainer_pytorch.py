@@ -115,7 +115,7 @@ class PytorchTrainer(BaseTrainer):
                     preds_val = self.model(x_val)
 
                     if self.special_mode=="cut_five_dim" and preds_val.ndim == 5:
-                        preds_val_tmp = preds_val[:, -1]
+                        preds_val_tmp = preds_val[:, -1, :, :, :]
                     else:
                         preds_val_tmp = preds_val
 
@@ -208,9 +208,9 @@ class PytorchTrainer(BaseTrainer):
 
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
-    def predict(self, data_loader, batch_size=1): 
+    def predict_image(self, data_loader, batch_size=1): 
         self.load_model_from_checkpoint("best.pt")
-        #data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+        # data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
         
         self.model.eval()
         with torch.no_grad():
@@ -218,5 +218,23 @@ class PytorchTrainer(BaseTrainer):
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
                 images = images.to(self.device)
                 preds = self.model(images)
+                if self.special_mode == "cut_five_dim" and preds.ndim == 5:
+                    # (B, 2, K, H, W) → (B, K, H, W)
+                    preds = preds[:, -1, :, :, :]
+                yield item, preds.cpu().numpy()
+
+    def predict(self, data_loader, batch_size=1): 
+        self.load_model_from_checkpoint("best.pt")
+        data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+        
+        self.model.eval()
+        with torch.no_grad():
+            for item in data_loader:
+                images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                images = images.to(self.device)
+                preds = self.model(images)
+                if self.special_mode == "cut_five_dim" and preds.ndim == 5:
+                    # (B, 2, K, H, W) → (B, K, H, W)
+                    preds = preds[:, -1, :, :, :]
                 yield item, preds.cpu().numpy()
 

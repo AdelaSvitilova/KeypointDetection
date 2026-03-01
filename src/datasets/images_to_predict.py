@@ -19,7 +19,8 @@ class ImageDataset(BaseDataset):
         num_samples=None,
         transform=None,
         input_size=(256, 256),
-        heatmaps=None
+        heatmaps=None,
+        annotation_file=None
     ):
         self.img_dir = os.path.join(root_dir, "images")
         load_file = os.path.join(root_dir, load)

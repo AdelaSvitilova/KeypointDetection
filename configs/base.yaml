@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: atlas_test_pc
+  name: atlas_test_scheduler
   continue_from: null  # null or checkpoint (epoch_10.pt/best.pt)
 
 loss:

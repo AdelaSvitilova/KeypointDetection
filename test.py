@@ -247,22 +247,22 @@ def main():
     results = []
 
     # === Prediction loop ===
-    for batch, preds in trainer.predict(loader):
+    for batch, preds in trainer.predict_image(loader):
         for img, pred, fname, keypoints in zip(
             batch["image"], preds, batch["filename"], batch["keypoints"]
         ):
             # Visualize individual heatmaps
-            visualize_heatmaps_grid(img, pred[0], path_to_save, fname,
+            visualize_heatmaps_grid(img, pred, path_to_save, fname,
                                     annotations_label=annotations_label, keypoints=keypoints)
             # Visualize combined heatmap
-            visualize_heatmaps_combined(img, pred[0], path_to_save, fname,
+            visualize_heatmaps_combined(img, pred, path_to_save, fname,
                                         show_points=True, keypoints=keypoints)
 
             # Compute metrics
             metrics_values = {}
             for m in metrics:
                 m.reset()
-                m.update(np.expand_dims(pred[0], axis=0), np.expand_dims(keypoints, axis=0))
+                m.update(np.expand_dims(pred, axis=0), np.expand_dims(keypoints, axis=0))
                 metrics_values[type(m).__name__] = m.compute()
 
             # Add filename to results

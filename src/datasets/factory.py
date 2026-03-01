@@ -39,7 +39,7 @@ def get_dataset(
     datasets = {
         "coco": COCODataset,
         "random": RandomDataset,
-        #"images": ImageDataset, - if there is long time no problem delete it because I figure out better solution
+        "images": ImageDataset,
         "atlas": AtlasDataset,
     }
 
