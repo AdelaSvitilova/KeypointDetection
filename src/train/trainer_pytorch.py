@@ -50,18 +50,14 @@ class PytorchTrainer(BaseTrainer):
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        self.log_dir = Path("logs") / experiment_name
-        self.log_dir.mkdir(parents=True, exist_ok=True)
-
         self.save_every_epoch = save_every_epoch
         self.use_tensorboard = use_tensorboard
 
     def train(self, start_epoch=0, best_val_loss=float('inf')):
         if self.use_tensorboard:
-            #writer = SummaryWriter(log_dir=str(self.log_dir))
-            if os.path.exists("runs") and os.path.isdir("runs"):
-                shutil.rmtree("runs")
-            writer = SummaryWriter()
+            self.log_dir = Path("logs") / experiment_name
+            self.log_dir.mkdir(parents=True, exist_ok=True)
+            writer = SummaryWriter(log_dir=str(self.log_dir))
 
         train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
         val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
@@ -105,6 +101,7 @@ class PytorchTrainer(BaseTrainer):
                     metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy())
 
             end = time.time()
+            train_seconds = end - start
 
             hours, remainder = divmod(end-start, 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -112,7 +109,8 @@ class PytorchTrainer(BaseTrainer):
             train_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
             train_loss = running_loss / len(self.train_dataset)
-            train_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+            train_metrics_text = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+            train_metrics = {type(m).__name__: m.compute() for m in self.metrics}
 
             self.model.eval()
             for metric in self.metrics:
@@ -141,6 +139,7 @@ class PytorchTrainer(BaseTrainer):
                         metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy())
 
             end = time.time()
+            val_seconds = end - start
 
             hours, remainder = divmod(end-start, 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -148,7 +147,8 @@ class PytorchTrainer(BaseTrainer):
             val_time = f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
             val_loss /= len(self.val_dataset)
-            val_metrics = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+            val_metrics_text = {type(m).__name__: f"{m.compute():.4f}" for m in self.metrics}
+            val_metrics = {type(m).__name__: m.compute() for m in self.metrics}
 
             self.scheduler.step()
             
@@ -167,28 +167,35 @@ class PytorchTrainer(BaseTrainer):
                     )
                 best_val_loss = val_loss
 
-            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics} | Val Time: {val_time} | lr: {self.optimizer.param_groups[0]['lr']:.3e}")
+            print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics_text} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics_text} | Val Time: {val_time} | lr: {self.optimizer.param_groups[0]['lr']:.3e}")
 
             with open(log_file, "a") as f:
                 f.write(
                     f"Epoch {epoch:03d} | "
                     f"train_loss={train_loss:.3e} | "
-                    f"train_metrics={train_metrics} | "
+                    f"train_metrics={train_metrics_text} | "
                     f"train_time={train_time} | "
                     f"val_loss={val_loss:.3e} | "
                     f"val_time={val_time} | "
-                    f"val_metrics={val_metrics} | "
+                    f"val_metrics={val_metrics_text} | "
                     f"lr={self.optimizer.param_groups[0]['lr']:.3e}\n"
                 )
                 
             if self.use_tensorboard:
-                writer.add_scalar(
-                    "Training Loss",
-                    train_loss,
-                    epoch
-                )
+                writer.add_scalar("Loss/Train", train_loss, epoch)
+                writer.add_scalar("Loss/Validation", val_loss, epoch)
+                writer.add_scalar("Time/Train", train_seconds, epoch)
+                writer.add_scalar("Time/Validation", val_seconds, epoch)
+                writer.add_scalar("Learning_Rate", self.optimizer.param_groups[0]['lr'], epoch)
+                # logování metrik do TensorBoardu
+                for name, value in train_metrics.items():
+                    writer.add_scalar(f"Metrics/Train/{name}", value, epoch)
 
-        if self.use_tensorboerd:
+                for name, value in val_metrics.items():
+                    writer.add_scalar(f"Metrics/Validation/{name}", value, epoch)
+                writer.flush()
+
+        if self.use_tensorboard:
             writer.close()
 
     def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):

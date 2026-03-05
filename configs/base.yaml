@@ -16,4 +16,4 @@ train:
   epochs: 100
   save_every_epoch: 10
   device: null #"cuda:4"
-  use_tensorboard: True
+  use_tensorboard: False

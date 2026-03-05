@@ -5,4 +5,5 @@ tmp.py
 */coco_full
 */atlas_full
 results/*
-runs/*
+logs/*
+help.txt
