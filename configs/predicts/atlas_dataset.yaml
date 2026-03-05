@@ -1,7 +1,7 @@
 predict:
   name: atlas
   model: null # null for best or model epoch_10.pt
-  images_list: "val.csv"
+  images_list: "val.csv" #"val_atlas_vertebra_fold_0.csv"
   num_samples: 100
   batch_size: 2
   annotation_label: annotation_label.txt

@@ -1,8 +1,8 @@
 dataset:
   name: atlas
-  train: "train.csv"
+  train: "train.csv" #"train_atlas_vertebra_fold_0.csv"
   train_num_samples: null
-  val: "val.csv"
+  val: "val.csv" #"val_atlas_vertebra_fold_0.csv"
   val_num_samples: null
   params:
     root_dir: "./data/atlas_full"

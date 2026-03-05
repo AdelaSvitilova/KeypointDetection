@@ -4,7 +4,6 @@ configs:
   # setting 1 small data + good model
   - configs/models/stacked_hourglass_pytorch.yaml
   # - configs/datasets/coco_dataset.yaml
-  - configs/datasets/atlas_dataset.yaml
 
   # setting 2 keypoint
   # - configs/models/test_pytorch.yaml
@@ -13,6 +12,7 @@ configs:
   # setting 3 full dataset
   # - configs/models/stacked_hourglass_pytorch.yaml
   # - configs/datasets/coco_dataset_full.yaml
+  - configs/datasets/atlas_dataset.yaml
 
   # setting 4 random for testing
   # - configs/models/test_heatmaps_pytorch.yaml

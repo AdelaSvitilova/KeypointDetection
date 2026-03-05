@@ -1,10 +1,13 @@
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from .base_trainer import BaseTrainer
 from .utils import collate_fn
 from pathlib import Path
 import time
+import os
+import shutil
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -21,7 +24,8 @@ class PytorchTrainer(BaseTrainer):
         experiment_name="exp0",
         keypoint_format="keypoints",
         special_mode=None,
-        device=None
+        device=None,
+        use_tensorboard=True
     ):
         super().__init__(
             model=model,
@@ -46,9 +50,19 @@ class PytorchTrainer(BaseTrainer):
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+        self.log_dir = Path("logs") / experiment_name
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
         self.save_every_epoch = save_every_epoch
+        self.use_tensorboard = use_tensorboard
 
     def train(self, start_epoch=0, best_val_loss=float('inf')):
+        if self.use_tensorboard:
+            #writer = SummaryWriter(log_dir=str(self.log_dir))
+            if os.path.exists("runs") and os.path.isdir("runs"):
+                shutil.rmtree("runs")
+            writer = SummaryWriter()
+
         train_loader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
         val_loader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
 
@@ -166,6 +180,16 @@ class PytorchTrainer(BaseTrainer):
                     f"val_metrics={val_metrics} | "
                     f"lr={self.optimizer.param_groups[0]['lr']:.3e}\n"
                 )
+                
+            if self.use_tensorboard:
+                writer.add_scalar(
+                    "Training Loss",
+                    train_loss,
+                    epoch
+                )
+
+        if self.use_tensorboerd:
+            writer.close()
 
     def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):
         checkpoint = {
