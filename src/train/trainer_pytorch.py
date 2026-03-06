@@ -96,7 +96,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # metriku počítáme na detachnutých tensorech
                 for metric in self.metrics:
-                    metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy(), item["norm_coefficient"].detach().cpu().numpy())
+                    metric.update(preds_tmp.detach().cpu().numpy(), y.detach().cpu().numpy(), norm_coefficient=item["norm_coefficient"].detach().cpu().numpy())
 
             end = time.time()
             train_seconds = end - start
@@ -134,7 +134,7 @@ class PytorchTrainer(BaseTrainer):
                     val_loss += loss_val.item()
 
                     for metric in self.metrics:
-                        metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy(), item["norm_coefficient"].detach().cpu().numpy())
+                        metric.update(preds_val_tmp.detach().cpu().numpy(), y_val.detach().cpu().numpy(), norm_coefficient=item["norm_coefficient"].detach().cpu().numpy())
 
             end = time.time()
             val_seconds = end - start

@@ -15,7 +15,7 @@ loss:
   name: multi_MSE
 
 metrics:
-  names: ["PCK_heatmaps"]
+  names: ["PCK_heatmaps", "AED_heatmaps"]
 
 dataset:
   params:
