@@ -8,3 +8,4 @@ dataset:
     root_dir: "./data/atlas_full"
     num_keypoints: 23
     annotation_file: pose_dataset.csv
+    norm_coefficient: 15 # tento parametr odkazuje na velikost objektu pro např PCK metriku

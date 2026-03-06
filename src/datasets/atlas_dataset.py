@@ -24,6 +24,7 @@ class AtlasDataset(BaseDataset):
         input_size=(256, 256),
         output_size=(64, 64),
         annotation_file='pose_dataset.csv',
+        norm_coefficient=25
     ):
         self.img_dir = os.path.join(root_dir, "images")
         ann_file = os.path.join(root_dir, annotation_file)
@@ -34,6 +35,7 @@ class AtlasDataset(BaseDataset):
         self.num_keypoints = num_keypoints
         self.input_size = input_size
         self.output_size = output_size
+        self.norm_coefficient = norm_coefficient
 
         # načti seznam obrázků, které chceš použít
         with open(load_file, newline="") as f:
@@ -106,4 +108,5 @@ class AtlasDataset(BaseDataset):
             "keypoints": keypoints,
             "heatmaps": heatmaps,
             "filename": self.images[idx],
+            "norm_coefficient": self.norm_coefficient
         }

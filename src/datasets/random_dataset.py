@@ -102,4 +102,5 @@ class RandomDataset(BaseDataset):
             "image": image,
             "keypoints": keypoints,
             "heatmaps": heatmaps,
+            "norm_coefficient": 25
         }
