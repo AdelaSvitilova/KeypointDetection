@@ -234,7 +234,7 @@ class PytorchTrainer(BaseTrainer):
     def continue_train(self, checkpoint_name):
         epoch, start_epoch, best_val_loss = self.load_model_from_checkpoint(checkpoint_name)
 
-        print(f"Checkpoint načten: epoch {epoch}. Pokračuji od epochy {start_epoch + 1}.")
+        print(f"Loaded checkpoint from epoch {epoch}. Resuming training at epoch {start_epoch + 1}.")
 
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
