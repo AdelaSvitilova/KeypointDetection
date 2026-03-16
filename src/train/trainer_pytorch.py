@@ -197,7 +197,7 @@ class PytorchTrainer(BaseTrainer):
         if self.use_tensorboard:
             writer.close()
 
-    def save_checkpoint(self, epoch, best_val_loss, path, scheduler=None):
+    def save_checkpoint(self, epoch, best_val_loss, path):
         checkpoint = {
             "epoch": epoch,
             "best_val_loss": best_val_loss,
@@ -205,8 +205,10 @@ class PytorchTrainer(BaseTrainer):
             "optimizer_state_dict": self.optimizer.state_dict(),
         }
 
-        if scheduler is not None:
-            checkpoint["scheduler_state_dict"] = scheduler.state_dict()
+        if self.scheduler is not None:
+            checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
+        else:
+            checkpoint["scheduler_state_dict"] = None
 
         torch.save(checkpoint, path)
 

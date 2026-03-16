@@ -1,13 +1,13 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: EXP0603_1
-  continue_from: epoch_2.pt  # null or checkpoint (epoch_10.pt/best.pt)
+  name: EXP1603_3
+  continue_from: epoch_10.pt  # null or checkpoint (epoch_10.pt/best.pt)
 
 train:
   batch_size: 8
   lr: 0.01
-  epochs: 10
+  epochs: 20
   save_every_epoch: 10
   device: null #"cuda:4"
-  use_tensorboard: True
+  use_tensorboard: False
