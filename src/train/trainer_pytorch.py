@@ -44,7 +44,6 @@ class PytorchTrainer(BaseTrainer):
 
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        print(CosineAnnealingLR["T_max"], float(CosineAnnealingLR["eta_min"]))
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=int(CosineAnnealingLR["T_max"]), eta_min=float(CosineAnnealingLR["eta_min"]))
 
         self.checkpoint_dir = Path("results") / experiment_name
