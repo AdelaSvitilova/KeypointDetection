@@ -25,3 +25,8 @@ dataset:
     output_size:
       - 64
       - 64
+
+train:
+  CosineAnnealingLR:
+      T_max: 50 
+      eta_min: 1e-6
