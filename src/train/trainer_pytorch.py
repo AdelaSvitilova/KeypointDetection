@@ -207,8 +207,6 @@ class PytorchTrainer(BaseTrainer):
 
         if self.scheduler is not None:
             checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
-        else:
-            checkpoint["scheduler_state_dict"] = None
 
         torch.save(checkpoint, path)
 
@@ -223,7 +221,7 @@ class PytorchTrainer(BaseTrainer):
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
-        if hasattr(self, "scheduler") and "scheduler_state_dict" in checkpoint:
+        if hasattr(self, "scheduler") and "scheduler_state_dict" in checkpoint and checkpoint["scheduler_state_dict"] is not None:
             self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
         epoch = checkpoint.get('epoch', 0)

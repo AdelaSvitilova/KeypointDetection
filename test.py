@@ -270,9 +270,14 @@ def main():
             row.update(metrics_values)
             results.append(row)
 
-    # Sort results by first metric (descending)
-    first_metric = list(metrics_values.keys())[0]
-    results_sorted = sorted(results, key=lambda x: x[first_metric], reverse=True)
+    # Sort results by metric
+    metrics = list(metrics_values.keys())
+
+    results_sorted = sorted(
+        results,
+        key=lambda x: (x[metrics[0]], -x[metrics[1]]),
+        reverse=True
+    )
 
     # Save results to CSV
     csv_path = os.path.join(path_to_save, "metrics_sorted.csv")
