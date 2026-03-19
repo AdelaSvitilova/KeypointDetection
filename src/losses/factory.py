@@ -1,6 +1,8 @@
-from .mse_loss_pytorch import KeypointMSELossPytorch
-from .mse_loss_keras import KeypointMSELossKeras
+from .mse_loss_pytorch import MSELossPytorch
+from .mse_loss_keras import MSELossKeras
+from .aed_loss_pytorch import AEDLossPytorch
 from .multi_mse_loss_pytorch import MultiMSELossPytorch
+from .multi_aed_loss_pytorch import MultiAEDLossPytorch
 
 def get_loss(name, backend, **kwargs):
     """
@@ -25,12 +27,17 @@ def get_loss(name, backend, **kwargs):
 
     losses = {
         "MSE": {
-            "pytorch": KeypointMSELossPytorch,
-            "keras": KeypointMSELossKeras,
-            # "numpy": KeypointMSELossNumpy,
+            "pytorch": MSELossPytorch,
+            "keras": MSELossKeras,
         },
         "multi_MSE": {
             "pytorch": MultiMSELossPytorch
+        }, 
+        "AED": {
+            "pytorch": AEDLossPytorch
+        },
+        "multi_AED": {
+            "pytorch": MultiAEDLossPytorch
         }
     }
 

@@ -1,7 +1,7 @@
 import re
 import matplotlib.pyplot as plt
 
-exp_name = "EXP_17_3_0"
+exp_name = "EXP_19_3_1"
 log_file = f"results/{exp_name}/training.log"
 
 epochs = []
@@ -42,7 +42,7 @@ plt.plot(epochs, val_losses, label="Val loss")
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.xlim(10, epochs[-1])
-plt.ylim(0, 0.00002)
+plt.ylim(0, 0.02)
 plt.title("Training vs Validation Loss")
 plt.legend()
 plt.grid(True)

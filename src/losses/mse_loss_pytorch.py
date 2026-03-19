@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .base_loss import BaseLoss
 
-class KeypointMSELossPytorch(BaseLoss):
+class MSELossPytorch(BaseLoss):
     """
     PyTorch implementation of Mean Squared Error (MSE) loss for keypoints.
 

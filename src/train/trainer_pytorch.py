@@ -85,7 +85,7 @@ class PytorchTrainer(BaseTrainer):
 
                 # loss = torch-based → backprop funguje
                 if self.special_mode=="cut_five_dim" and preds.ndim == 5:
-                    preds_tmp = preds[:, -1]
+                    preds_tmp = preds[:, -1, :, :, :]
                 else:
                     preds_tmp = preds
                     

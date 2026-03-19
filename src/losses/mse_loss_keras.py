@@ -2,7 +2,7 @@ import keras
 from keras.losses import MeanSquaredError
 from .base_loss import BaseLoss
 
-class KeypointMSELossKeras(BaseLoss):
+class MSELossKeras(BaseLoss):
     """
     Keras implementation of Mean Squared Error (MSE) loss for keypoints.
 
