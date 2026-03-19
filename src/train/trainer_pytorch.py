@@ -24,7 +24,9 @@ class PytorchTrainer(BaseTrainer):
         special_mode=None,
         device=None,
         use_tensorboard=True,
-        CosineAnnealingLR=None
+        scheduler=None,
+        CosineAnnealingLR=None,
+        CosineAnnealingWarmRestarts=None
     ):
         super().__init__(
             model=model,
@@ -44,7 +46,13 @@ class PytorchTrainer(BaseTrainer):
 
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=int(CosineAnnealingLR["T_max"]), eta_min=float(CosineAnnealingLR["eta_min"]))
+
+        if scheduler=="CosineAnnealingLR":
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=int(CosineAnnealingLR["T_max"]), eta_min=float(CosineAnnealingLR["eta_min"]))
+        elif scheduler=="CosineAnnealingWarmRestarts":
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optimizer, T_0=int(CosineAnnealingWarmRestarts["T_0"]),
+                                                                                    T_mult=int(CosineAnnealingWarmRestarts["T_mult"]),
+                                                                                    eta_min=float(CosineAnnealingWarmRestarts["eta_min"]))
 
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)

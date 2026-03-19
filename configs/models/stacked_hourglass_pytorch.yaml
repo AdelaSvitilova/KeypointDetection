@@ -27,6 +27,11 @@ dataset:
       - 64
 
 train:
+  scheduler: CosineAnnealingLR #CosineAnnealingLR, CosineAnnealingWarmRestarts
   CosineAnnealingLR:
-      T_max: 50 
-      eta_min: 1e-6
+    T_max: 50 
+    eta_min: 1e-6
+  CosineAnnealingWarmRestarts:
+    T_0: 4
+    T_mult: 2
+    eta_min: 1e-8
