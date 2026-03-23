@@ -12,7 +12,7 @@ model:
 keypoint_format: heatmaps
 
 loss:
-  name: multi_AED # multi_MSE, multi_AED
+  name: multi_L2 # multi_MSE, multi_L2, multi_AED
 
 metrics:
   names: ["PCK_heatmaps", "AED_heatmaps"]
