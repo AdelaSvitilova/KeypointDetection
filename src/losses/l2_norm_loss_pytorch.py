@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .base_loss import BaseLoss
 
-class L2LossPytorch(BaseLoss):
+class L2NormLossPytorch(BaseLoss):
 
     def __init__(self, reduction='mean'):
         super().__init__()

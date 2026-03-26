@@ -1,10 +1,12 @@
 from .mse_loss_pytorch import MSELossPytorch
 from .mse_loss_keras import MSELossKeras
-from .l2_loss_pytorch import L2LossPytorch
+from .l2_norm_loss_pytorch import L2NormLossPytorch
 from .aed_loss_pytorch import AEDLossPytorch
+from .huber_loss_pytorch import HuberLossPytorch
 from .multi_mse_loss_pytorch import MultiMSELossPytorch
-from .multi_l2_loss_pytorch import MultiL2LossPytorch
+from .multi_l2_norm_loss_pytorch import MultiL2NormLossPytorch
 from .multi_aed_loss_pytorch import MultiAEDLossPytorch
+from .multi_huber_loss_pytorch import MultiHuberLossPytorch
 
 def get_loss(name, backend, **kwargs):
     """
@@ -35,17 +37,23 @@ def get_loss(name, backend, **kwargs):
         "multi_MSE": {
             "pytorch": MultiMSELossPytorch
         }, 
-        "L2": {
-            "pytorch": L2LossPytorch
+        "L2Norm": {
+            "pytorch": L2NormLossPytorch
         },
-        "multi_L2": {
-            "pytorch": MultiL2LossPytorch
+        "multi_L2Norm": {
+            "pytorch": MultiL2NormLossPytorch
         },
         "AED": {
             "pytorch": AEDLossPytorch
         },
         "multi_AED": {
             "pytorch": MultiAEDLossPytorch
+        },
+        "Huber": {
+            "pytorch": HuberLossPytorch
+        },
+        "multi_Huber": {
+            "pytorch": MultiHuberLossPytorch
         },
     }
 

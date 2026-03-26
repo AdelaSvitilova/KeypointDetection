@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
 from .base_loss import BaseLoss
-from .l2_loss_pytorch import L2LossPytorch
+from .huber_loss_pytorch import HuberLossPytorch
 
-class MultiL2LossPytorch(BaseLoss):
-
+class MultiHuberLossPytorch(BaseLoss):
     def __init__(self):
         super().__init__()
-        self.loss_fn = L2LossPytorch()
+        self.loss_fn = HuberLossPytorch()
 
     def __call__(self, preds, targets):
         num_stacks = preds.size(1)
