@@ -8,7 +8,9 @@ from .multi_l2_norm_loss_pytorch import MultiL2NormLossPytorch
 from .multi_aed_loss_pytorch import MultiAEDLossPytorch
 from .multi_huber_loss_pytorch import MultiHuberLossPytorch
 
-def get_loss(name, backend, **kwargs):
+from .weighted_loss import WeightedLoss
+
+def get_loss(name, backend, losses=None, weights=None, **kwargs):
     """
     Factory function to create a loss instance based on the loss name and backend.
 
@@ -29,7 +31,7 @@ def get_loss(name, backend, **kwargs):
     """
     backend = backend.lower()
 
-    losses = {
+    losses_dict = {
         "MSE": {
             "pytorch": MSELossPytorch,
             "keras": MSELossKeras,
@@ -57,10 +59,21 @@ def get_loss(name, backend, **kwargs):
         },
     }
 
-    if name not in losses:
+    if name == "Weighted":
+        loss_functions = []
+        for l in losses:
+            if l not in losses_dict:
+                raise ValueError(f"Unknown loss name: {l}")
+            if backend not in losses_dict[l]:
+                raise ValueError(f"Loss '{l}' not implemented for backend '{backend}'")
+
+            loss_functions.append(losses_dict[l][backend](**kwargs))
+        return WeightedLoss(loss_functions, weights, **kwargs)
+            
+    if name not in losses_dict:
         raise ValueError(f"Unknown loss name: {name}")
-    if backend not in losses[name]:
+    if backend not in losses_dict[name]:
         raise ValueError(f"Loss '{name}' not implemented for backend '{backend}'")
 
-    loss_cls = losses[name][backend]
+    loss_cls = losses_dict[name][backend]
     return loss_cls(**kwargs)

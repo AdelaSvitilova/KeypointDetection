@@ -12,10 +12,13 @@ model:
 keypoint_format: heatmaps
 
 loss:
-  name: multi_Huber # multi_MSE, multi_L2Norm, multi_AED, multi_Huber
+  name: Weighted # multi_MSE, multi_L2Norm, multi_AED, multi_Huber, Weighted
+  params:
+    losses: ["multi_MSE", "multi_AED"]
+    weights: [0.4, 0.6]
 
 metrics:
-  names: ["PCK_heatmaps", "AED_heatmaps"]
+  names: [PCK_heatmaps, AED_heatmaps]
 
 dataset:
   params:
@@ -27,7 +30,7 @@ dataset:
       - 64
 
 train:
-  scheduler: CosineAnnealingLR #CosineAnnealingLR, CosineAnnealingWarmRestarts
+  scheduler: CosineAnnealingWarmRestarts #CosineAnnealingLR, CosineAnnealingWarmRestarts
   CosineAnnealingLR:
     T_max: 50 
     eta_min: 1e-6

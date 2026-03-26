@@ -62,7 +62,7 @@ def main():
     print(f"Validation dataset loaded ({len(val_dataset)} samples).")
 
     # === Loss function and metrics ===
-    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["backend"])
+    loss_fn = get_loss(cfg["loss"]["name"], cfg["model"]["backend"], **cfg["loss"]["params"])
     metrics = get_metrics(cfg["metrics"]["names"])
 
     print(f"Loss function: {cfg['loss']['name']}")
