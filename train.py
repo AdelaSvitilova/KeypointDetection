@@ -79,6 +79,7 @@ def main():
         experiment_name=cfg["experiment"]["name"],
         keypoint_format=cfg["keypoint_format"],
         special_mode=cfg["model"]["special_mode"],
+        loss_use_heatmaps=cfg["loss"]["use_heatmaps"],
         **cfg["train"],
     )
 
