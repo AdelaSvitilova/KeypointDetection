@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: EXP_27_3_3
+  name: EXP_16-3_2026-pretest
   continue_from: null  # null or checkpoint (epoch_10.pt/best.pt)
 
 train:
