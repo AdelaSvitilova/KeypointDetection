@@ -8,7 +8,7 @@ class L2NormLossPytorch(BaseLoss):
         super().__init__()
         self.reduction = reduction
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, **kwargs):
         diff = preds - targets
         
         dist = torch.norm(diff, p=2, dim=1)

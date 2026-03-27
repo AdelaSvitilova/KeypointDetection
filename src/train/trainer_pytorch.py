@@ -22,7 +22,6 @@ class PytorchTrainer(BaseTrainer):
         experiment_name="exp0",
         keypoint_format="keypoints",
         special_mode=None,
-        loss_use_heatmaps=True,
         device=None,
         use_tensorboard=True,
         scheduler=None,
@@ -43,7 +42,6 @@ class PytorchTrainer(BaseTrainer):
         )
         
         self.special_mode = special_mode
-        self.loss_use_heatmaps = loss_use_heatmaps
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model.to(self.device)
@@ -99,10 +97,7 @@ class PytorchTrainer(BaseTrainer):
                 else:
                     preds_tmp = preds
                     
-                if self.loss_use_heatmaps:    
-                    loss = self.loss_fn(preds, y_h)
-                else:
-                    loss = self.loss_fn(preds, y)
+                loss = self.loss_fn(preds, targets=y_h, keypoint_targets=y)
                 loss.backward()
                 self.optimizer.step()
 
@@ -143,10 +138,7 @@ class PytorchTrainer(BaseTrainer):
                     else:
                         preds_val_tmp = preds_val
 
-                    if self.loss_use_heatmaps:
-                        loss_val = self.loss_fn(preds_val, y_h_val)
-                    else:
-                        loss_val = self.loss_fn(preds_val, y_val)
+                    loss_val = self.loss_fn(preds_val, targets=y_h_val, keypoint_targets=y_val)
 
                     val_loss += loss_val.item()
 

@@ -15,7 +15,7 @@ class MSELossKeras(BaseLoss):
         super().__init__()
         self.loss_fn = MeanSquaredError()
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, **kwargs):
         """
         Compute the MSE loss between predictions and target keypoints.
 

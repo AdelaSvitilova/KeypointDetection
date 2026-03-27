@@ -9,13 +9,13 @@ class MultiAEDLossPytorch(BaseLoss):
         super().__init__()
         self.loss_fn = AEDLossPytorch()
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, keypoint_targets, **kwargs):
         num_stacks = preds.size(1)
 
         losses = []
         for i in range(num_stacks):
             stack_preds = preds[:, i]
-            loss = self.loss_fn(stack_preds, targets)
+            loss = self.loss_fn(stack_preds, keypoint_targets, **kwargs)
             losses.append(loss)
 
         #print([l.item() for l in losses])

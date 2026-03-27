@@ -21,7 +21,7 @@ class MultiMSELossPytorch(BaseLoss):
         super().__init__()
         self.loss_fn = nn.MSELoss()
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, **kwargs):
         """
         Compute the average MSE loss over all prediction stacks.
 

@@ -45,9 +45,9 @@ class AEDLossPytorch(BaseLoss):
             return self._soft_argmax(x)
         return x  # (B, K, 2)
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, keypoint_targets, **kwargs):
         preds_kp = self._to_keypoints(preds)
-        targets_kp = self._to_keypoints(targets)
+        targets_kp = self._to_keypoints(keypoint_targets)
 
         if preds_kp.shape != targets_kp.shape:
             raise ValueError(f"Shape mismatch: {preds_kp.shape} vs {targets_kp.shape}")

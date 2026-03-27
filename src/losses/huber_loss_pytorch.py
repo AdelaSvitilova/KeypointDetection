@@ -7,5 +7,5 @@ class HuberLossPytorch(BaseLoss):
         super().__init__()
         self.loss_fn = nn.HuberLoss()
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, **kwargs):
         return self.loss_fn(preds, targets)

@@ -14,8 +14,8 @@ class WeightedLoss(BaseLoss):
         self.losses = losses
         self.weights = weights
 
-    def __call__(self, preds, targets):
+    def __call__(self, preds, targets, keypoint_targets):
         total = 0
         for loss, w in zip(self.losses, self.weights):
-            total += w * loss(preds, targets)
+            total += w * loss(preds, targets=targets, keypoint_targets=keypoint_targets)
         return total

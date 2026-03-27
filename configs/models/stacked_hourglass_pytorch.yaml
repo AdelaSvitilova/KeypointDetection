@@ -12,11 +12,10 @@ model:
 keypoint_format: heatmaps
 
 loss:
-  name: multi_AED # multi_MSE, multi_L2Norm, multi_AED, multi_Huber, Weighted
-  use_heatmaps: False
+  name: multi_Huber # multi_MSE, multi_L2Norm, multi_AED, multi_Huber, Weighted (set parametrs in params)
   params:
     losses: ["multi_MSE", "multi_AED"]
-    weights: [0.4, 0.6]
+    weights: [0.4, 0.6] # sum must be 1
 
 metrics:
   names: [PCK_heatmaps, AED_heatmaps]
