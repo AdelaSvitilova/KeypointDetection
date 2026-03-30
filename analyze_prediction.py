@@ -179,8 +179,13 @@ def plot_metrics_per_keypoint(stats, output_dir):
 
 
 def main():
-    csv_path = "results/EXP_16-3_2026-pretest/predictions_vs_annotations.csv"
-    output_dir = "results/EXP_16-3_2026-pretest/analysis"
+    # === Config ===
+    cfg = load_config("configs/config_list.yaml")
+    print("Loaded configuration:", cfg)
+    exp = cfg["experiment"]["name"]
+    prefix = cfg["predict"]["prefix"]
+    csv_path = os.path.join("results", exp, "predictions_vs_annotations.csv")
+    output_dir =os.path.join("results", exp, prefix, "analysis")
     os.makedirs(output_dir, exist_ok=True)
 
     df = pd.read_csv(csv_path)

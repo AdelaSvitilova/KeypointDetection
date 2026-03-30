@@ -1,8 +1,12 @@
+experiment:
+  name: EXP_16-3_2026-pretest
+
 predict:
   name: atlas
   model: null # null for best or model epoch_10.pt
   images_list: "val.csv" #"val_atlas_vertebra_fold_0.csv"
   num_samples: 100
+  prefix: val
   batch_size: 2
   annotation_label: annotation_label.txt
   metrics: ["PCK_heatmaps", "AED_heatmaps"]
