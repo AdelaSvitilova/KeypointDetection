@@ -41,7 +41,6 @@ def analysis_per_keypoint(errors, output_dir):
               f"std={stats[label]['std']:.2f}, "
               f"max={stats[label]['max']:.2f}")
 
-    # Uložit do CSV
     keypoint_df = pd.DataFrame(stats).T.reset_index()
     keypoint_df = keypoint_df.rename(columns={"index": "keypoint"})
     keypoint_df.to_csv(os.path.join(output_dir, "per_keypoint_stats.csv"), index=False)
@@ -52,13 +51,9 @@ def analysis_per_keypoint(errors, output_dir):
 def analysis_per_image(df, errors, output_dir):
     print("\n=== Per-image analysis ===")
 
-    # vytvoř DataFrame chyb
     err_df = pd.DataFrame(errors)
 
-    # průměrná chyba na obrázek
     df["mean_error"] = err_df.mean(axis=1)
-
-    # nejhorší keypoint v obrázku
     df["max_error"] = err_df.max(axis=1)
 
     print("\nTop 5 nejhorších obrázků:")
@@ -66,7 +61,6 @@ def analysis_per_image(df, errors, output_dir):
         ["filename", "mean_error", "max_error"]
     ].head())
 
-    # Uložit jen výsledky do CSV
     df_results = df[["filename", "mean_error", "max_error"]]
     df_results.to_csv(os.path.join(output_dir, "per_image_stats.csv"), index=False)
 
@@ -82,12 +76,13 @@ def plot_distributions(errors, output_dir):
     plt.figure(figsize=(10, 6))
 
     all_errors = np.concatenate(list(errors.values()))
-    plt.hist(all_errors, bins=50)
+    plt.hist(all_errors, bins=30, alpha=0.7, color='skyblue', edgecolor='black')
 
     plt.title("Error Distribution (All Keypoints)")
     plt.xlabel("Pixel Error")
     plt.ylabel("Frequency")
 
+    plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "histogram.png"))
     plt.close()
 
@@ -107,13 +102,14 @@ def plot_distributions(errors, output_dir):
     plt.savefig(os.path.join(output_dir, "boxplot.png"))
     plt.close()
 
+
 def plot_keypoint_distributions(errors, output_dir):
     """Vytvoří histogramy chyb pro každý keypoint zvlášť"""
     print("\n=== Plotting per-keypoint distributions ===")
     os.makedirs(output_dir, exist_ok=True)
 
     for label, err in errors.items():
-        plt.figure(figsize=(8, 5))
+        plt.figure(figsize=(10, 6))
         plt.hist(err, bins=30, alpha=0.7, color='skyblue', edgecolor='black')
         plt.title(f"Error Distribution for Keypoint: {label}")
         plt.xlabel("Pixel Error")
@@ -122,17 +118,15 @@ def plot_keypoint_distributions(errors, output_dir):
         plt.savefig(os.path.join(output_dir, f"histogram_{label}.png"))
         plt.close()
 
+
 def plot_keypoint_stats_boxplot(stats, output_dir):
-    """Vytvoří boxplot pro mean, median, std a max chybu přes všechny keypointy"""
     print("\n=== Plotting keypoint stats boxplot ===")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Převést dict na DataFrame
-    stats_df = pd.DataFrame(stats).T  # keypointy jako řádky
+    stats_df = pd.DataFrame(stats).T
 
     plt.figure(figsize=(10, 6))
 
-    # Data pro boxplot: sloupce stats
     data = [stats_df[col] for col in ["mean", "median", "std", "max"]]
     plt.boxplot(data, tick_labels=["Mean", "Median", "Std", "Max"], showfliers=False)
 
@@ -142,14 +136,14 @@ def plot_keypoint_stats_boxplot(stats, output_dir):
     plt.savefig(os.path.join(output_dir, "keypoint_stats_boxplot.png"))
     plt.close()
 
+
 def plot_metric_distributions(stats, output_dir):
-    """Vytvoří boxploty pro mean, median, std a max chybu přes všechny keypointy"""
     print("\n=== Plotting metric distributions per keypoint ===")
     os.makedirs(output_dir, exist_ok=True)
 
     metrics = ["mean", "median", "std", "max"]
 
-    stats_df = pd.DataFrame(stats).T  # keypointy jako řádky
+    stats_df = pd.DataFrame(stats).T
 
     for metric in metrics:
         plt.figure(figsize=(12, 6))
@@ -161,19 +155,20 @@ def plot_metric_distributions(stats, output_dir):
         plt.savefig(os.path.join(output_dir, f"boxplot_{metric}.png"))
         plt.close()
 
+
 def plot_metrics_per_keypoint(stats, output_dir):
-    """Vytvoří grafy pro mean, median, std a max chybu pro každý keypoint zvlášť na ose x"""
     print("\n=== Plotting metrics per keypoint ===")
     os.makedirs(output_dir, exist_ok=True)
 
-    stats_df = pd.DataFrame(stats).T  # keypointy jako řádky
+    stats_df = pd.DataFrame(stats).T
     stats_df = stats_df.reset_index().rename(columns={"index": "keypoint"})
 
     metrics = ["mean", "median", "std", "max"]
 
     for metric in metrics:
         plt.figure(figsize=(14, 6))
-        plt.bar(stats_df["keypoint"], stats_df[metric], color='skyblue', edgecolor='black')
+        plt.bar(stats_df["keypoint"], stats_df[metric],
+                color='skyblue', edgecolor='black')
         plt.xticks(rotation=45)
         plt.title(f"{metric.capitalize()} Error per Keypoint")
         plt.ylabel("Pixel Error")
@@ -193,29 +188,26 @@ def main():
     # === Compute errors ===
     errors = compute_keypoint_errors(df)
 
-    # === (2) Per keypoint ===
+    # === Per keypoint ===
     stats = analysis_per_keypoint(errors, output_dir)
 
-    # === (3) Per image ===
+    # === Per image ===
     df_results = analysis_per_image(df, errors, output_dir)
 
-    # === (4) Distribuce ===
+    # === Distribuce ===
     plot_distributions(errors, output_dir)
 
-    # === (4b) Distribuce pro každý keypoint ===
+    # === Distribuce pro každý keypoint ===
     plot_keypoint_distributions(errors, output_dir)
 
-    # === (4c) Boxplot pro mean, median, std, max přes keypointy ===
+    # === Boxplot pro stats ===
     plot_keypoint_stats_boxplot(stats, output_dir)
 
-    # === (4d) Distribuce metrik přes keypointy ===
-    # plot_metric_distributions(stats, output_dir)
-
-    # === (4e) Grafy metrik pro každý keypoint ===
+    # === Grafy metrik ===
     plot_metrics_per_keypoint(stats, output_dir)
 
-
     print("\nHotovo. Výstupy jsou v:", output_dir)
+
 
 if __name__ == "__main__":
     main()
