@@ -1,3 +1,4 @@
+from src.utils.config import load_config
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -185,7 +186,7 @@ def main():
     exp = cfg["experiment"]["name"]
     prefix = cfg["predict"]["prefix"]
     csv_path = os.path.join("results", exp, "predictions_vs_annotations.csv")
-    output_dir =os.path.join("results", exp, prefix, "analysis")
+    output_dir =os.path.join("results", exp, "analysis", prefix)
     os.makedirs(output_dir, exist_ok=True)
 
     df = pd.read_csv(csv_path)

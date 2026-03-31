@@ -79,7 +79,7 @@ def main():
         writer.writerow(header)
 
         # === Prediction loop ===
-        for item, heatmaps_np in trainer.predict(dataset, cfg["predict"]["batch_size"]):
+        for item, heatmaps_np in trainer.predict(dataset, checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"]):
 
             preds_np = heatmaps_np  # (B, K, H, W)
             filenames = item["filename"]

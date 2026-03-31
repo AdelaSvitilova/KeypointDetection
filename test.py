@@ -247,7 +247,7 @@ def main():
     results = []
 
     # === Prediction loop ===
-    for batch, preds in trainer.predict_image(loader):
+    for batch, preds in trainer.predict_image(loader, checkpoint=cfg["predict"]["model"]):
         for img, pred, fname, keypoints in zip(
             batch["image"], preds, batch["filename"], batch["keypoints"]
         ):

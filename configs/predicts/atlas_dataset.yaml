@@ -1,9 +1,9 @@
 experiment:
-  name: EXP_16-3_2026-pretest
+  name: Exp_27_3_huber
 
 predict:
   name: atlas
-  model: null # null for best or model epoch_10.pt
+  model: epoch_500.pt # null for best or model epoch_10.pt
   images_list: "val.csv" #"val_atlas_vertebra_fold_0.csv"
   num_samples: 100
   prefix: val

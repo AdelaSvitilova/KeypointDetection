@@ -246,9 +246,8 @@ class PytorchTrainer(BaseTrainer):
 
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
-    def predict_image(self, data_loader, batch_size=1): 
-        self.load_model_from_checkpoint("best.pt")
-        # data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+    def predict_image(self, data_loader, checkpoint="best.pt"): 
+        self.load_model_from_checkpoint(checkpoint)
         
         self.model.eval()
         with torch.no_grad():
@@ -261,8 +260,8 @@ class PytorchTrainer(BaseTrainer):
                     preds = preds[:, -1, :, :, :]
                 yield item, preds.cpu().numpy()
 
-    def predict(self, data_loader, batch_size=1): 
-        self.load_model_from_checkpoint("best.pt")
+    def predict(self, data_loader, checkpoint="best.pt", batch_size=1): 
+        self.load_model_from_checkpoint(checkpoint)
         data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
         
         self.model.eval()
