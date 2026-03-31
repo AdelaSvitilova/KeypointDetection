@@ -13,8 +13,8 @@ x = 10  # kolik řádků vzít
 train_ratio = 0.8  # poměr train/val
 
 # výstupní složky
-best_base = os.path.join(path, "prediction_selection/best/val")
-worst_base = os.path.join(path, "prediction_selection/worst/val")
+best_base = os.path.join(path, "prediction_selection/best", cfg["predict"]["prefix"])
+worst_base = os.path.join(path, "prediction_selection/worst", cfg["predict"]["prefix"])
 
 # ==== NAČTENÍ CSV ====
 rows = []
