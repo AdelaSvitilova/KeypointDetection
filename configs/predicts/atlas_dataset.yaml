@@ -1,5 +1,5 @@
 experiment:
-  name: Exp_27_3_huber
+  name: exp_to_test
 
 predict:
   name: atlas

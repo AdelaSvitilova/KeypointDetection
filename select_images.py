@@ -6,11 +6,9 @@ from src.utils.config import load_config
 # ==== PARAMETRY ====
 cfg = load_config("configs/config_list.yaml")
 path = os.path.join("results", cfg["experiment"]["name"])
-csv_path = os.path.join(path, "prediction/metrics_sorted.csv")
+csv_path = os.path.join(path, f"{cfg["predict"]["prefix"]}_metrics_sorted.csv")
 image_column = "filename"  # název sloupce v CSV
 x = 10  # kolik řádků vzít
-
-train_ratio = 0.8  # poměr train/val
 
 # výstupní složky
 best_base = os.path.join(path, "prediction_selection/best", cfg["predict"]["prefix"])

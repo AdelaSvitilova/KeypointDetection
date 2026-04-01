@@ -205,6 +205,7 @@ def main():
         name=cfg["predict"]["name"],
         load=cfg["predict"]["images_list"],
         num_samples=cfg["predict"]["num_samples"],
+        keypoint_format=cfg["keypoint_format"],
         **cfg["predict"]["params"]
     )
     print(f"Dataset loaded: {len(dataset)} images.")
@@ -241,7 +242,8 @@ def main():
     )
     print("Trainer initialized.")
 
-    path_to_save = os.path.join("results", cfg["experiment"]["name"], "prediction")
+    folder_path = os.path.join("results", cfg["experiment"]["name"])
+    path_to_save = os.path.join(folder_path, "prediction")
     os.makedirs(path_to_save, exist_ok=True)
 
     results = []
@@ -280,7 +282,7 @@ def main():
     )
 
     # Save results to CSV
-    csv_path = os.path.join(path_to_save, "metrics_sorted.csv")
+    csv_path = os.path.join(folder_path, f"{cfg["predict"]["prefix"]}_metrics_sorted.csv")
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
         header = ["filename"] + list(metrics_values.keys())
