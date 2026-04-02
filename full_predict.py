@@ -310,6 +310,64 @@ def analysis_per_image(cfg, df, errors, output_dir):
 
    return df_results
 
+def analysis_of_mean_error(df, stats):
+   # vytáhni mean hodnoty
+   means = [v['mean'] for v in stats.values()]
+
+   # výpočty
+   mean_of_means = np.mean(means)
+   std_of_means = np.std(means, ddof=1)  # sample std
+
+   print("mean of means:", mean_of_means)
+   print("std of means:", std_of_means)
+   return mean_of_means, std_of_means
+
+def analysis_metrics(cfg, df):
+   """
+   Compute metrics (e.g. AED) from dataframe with keypoints.
+
+   Args:
+      df (pd.DataFrame): DataFrame with columns like:
+         <kp>_ann_x, <kp>_ann_y, <kp>_pred_x, <kp>_pred_y
+      metrics (list): list of metric instances (e.g. [AED(), ...])
+
+   Returns:
+      dict: {metric_name: value}
+   """
+
+   # --- 1. najdi keypointy ---
+   keypoints = sorted({
+      c.replace("_ann_x", "")
+      for c in df.columns if "_ann_x" in c
+   })
+
+   B = len(df)
+   K = len(keypoints)
+
+   # --- 2. vytvoř pole ---
+   preds = np.zeros((B, K, 2))
+   targets = np.zeros((B, K, 2))
+
+   for i, kp in enumerate(keypoints):
+      targets[:, i, 0] = df[f"{kp}_ann_x"]
+      targets[:, i, 1] = df[f"{kp}_ann_y"]
+
+      preds[:, i, 0] = df[f"{kp}_pred_x"]
+      preds[:, i, 1] = df[f"{kp}_pred_y"]
+
+   # --- 3. spočítej metriky ---
+   metrics = get_metrics(cfg["predict"]["kp_metrics"])
+   metrics_values = {}
+
+   for m in metrics:
+      m.reset()
+      m.update(preds, targets)
+      metrics_values[type(m).__name__] = m.compute()
+
+   print(metrics_values)
+
+   return metrics_values
+
 def plot_distributions(errors, output_dir):
    print("\n=== Plotting distributions ===")
 
@@ -416,6 +474,36 @@ def plot_metrics_per_keypoint(stats, output_dir):
       plt.savefig(os.path.join(output_dir, f"{metric}_per_keypoint.png"))
       plt.close()
 
+def save_results(cfg, mean, std, metrics_dict, folder_path):
+    """
+    Uloží metriky do JSON souboru.
+
+    Args:
+        mean (float)
+        std (float)
+        metrics_dict (dict)
+        filepath (str)
+    """
+
+    # převod numpy typů na klasické floaty
+    metrics_clean = {
+        k: float(v) if isinstance(v, (np.floating, np.float32, np.float64)) else v
+        for k, v in metrics_dict.items()
+    }
+
+    data = {
+        "mean_of_means": float(mean),
+        "std_of_means": float(std),
+        "metrics": metrics_clean
+    }
+
+    path = os.path.join(folder_path, f"{cfg["predict"]["prefix"]}_results.json")
+
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+
+    print(f"Uloženo do {path}")
+
 def analyze_prediction(cfg, folder_path, df):
    output_dir = os.path.join(folder_path, "analysis", cfg["predict"]["prefix"])
    os.makedirs(output_dir, exist_ok=True)
@@ -428,6 +516,12 @@ def analyze_prediction(cfg, folder_path, df):
    # === Per image ===
    df_results = analysis_per_image(cfg, df, errors, folder_path)
 
+   # === Of keypoints ===
+   mean_of_means, std_of_means = analysis_of_mean_error(df, stats)
+
+   # metriky spočítat
+   metrics = analysis_metrics(cfg, df)
+
    # === Distribuce ===
    plot_distributions(errors, output_dir)
 
@@ -439,6 +533,9 @@ def analyze_prediction(cfg, folder_path, df):
 
    # === Grafy metrik ===
    plot_metrics_per_keypoint(stats, output_dir)
+
+   # full model results
+   save_results(cfg, mean_of_means, std_of_means, metrics, folder_path)
 
    print("\nHotovo. Výstupy jsou v:", output_dir)
 
@@ -498,11 +595,11 @@ def main():
 
    folder_path = os.path.join("results", cfg["experiment"]["name"])
 
-   # predikuj obrázky
-   predict_images(cfg, trainer, loader, metrics, folder_path)
+   # # predikuj obrázky
+   # predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # ulož best/worst
-   select_images(cfg, folder_path)
+   # # ulož best/worst
+   # select_images(cfg, folder_path)
 
    # vytvoř dataset predikcí
    df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)

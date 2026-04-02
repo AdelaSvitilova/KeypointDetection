@@ -10,6 +10,7 @@ predict:
   batch_size: 2
   annotation_label: annotation_label.txt
   metrics: ["PCK_heatmaps", "AED_heatmaps"]
+  kp_metrics: ["PCK", "AED"]
   params:
     root_dir: "./data/atlas_full"
     annotation_file: pose_dataset.csv
