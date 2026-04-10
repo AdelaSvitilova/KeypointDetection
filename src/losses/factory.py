@@ -3,10 +3,13 @@ from .mse_loss_keras import MSELossKeras
 from .l2_norm_loss_pytorch import L2NormLossPytorch
 from .aed_loss_pytorch import AEDLossPytorch
 from .huber_loss_pytorch import HuberLossPytorch
+from .kl_div_loss_pytorch import KLDivLossPytorch
 from .multi_mse_loss_pytorch import MultiMSELossPytorch
 from .multi_l2_norm_loss_pytorch import MultiL2NormLossPytorch
 from .multi_aed_loss_pytorch import MultiAEDLossPytorch
 from .multi_huber_loss_pytorch import MultiHuberLossPytorch
+from .multi_kl_div_pytorch import MultiKLDivLossPytorch
+
 
 from .weighted_loss import WeightedLoss
 
@@ -56,6 +59,12 @@ def get_loss(name, backend, losses=None, weights=None, **kwargs):
         },
         "multi_Huber": {
             "pytorch": MultiHuberLossPytorch
+        },
+        "KLDiv": {
+            "pytorch": KLDivLossPytorch
+        },
+        "multi_KLDiv": {
+            "pytorch": MultiKLDivLossPytorch
         },
     }
 
