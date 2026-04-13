@@ -1,11 +1,11 @@
 dataset:
-  name: atlas
-  train: "train.csv" #"train_atlas_vertebra_fold_0.csv"
-  train_num_samples: null
-  val: "val.csv" #"val_atlas_vertebra_fold_0.csv"
-  val_num_samples: null
+  name: atlas  # Dataset identifier (e.g., 'atlas')
+  train: "train.csv"  # Training split file; uncomment for fold-specific: "train_atlas_vertebra_fold_0.csv"
+  train_num_samples: null  # Override training sample count; null uses full dataset
+  val: "val.csv"  # Validation split file; uncomment for fold-specific: "val_atlas_vertebra_fold_0.csv"
+  val_num_samples: null  # Override validation sample count; null uses full dataset
   params:
-    root_dir: "./data/atlas_full"
-    num_keypoints: 23
-    annotation_file: pose_dataset.csv
-    norm_coefficient: 15 # tento parametr odkazuje na velikost objektu pro např PCK metriku
+    root_dir: "./data/atlas_full"  # Base directory for dataset files
+    num_keypoints: 23  # Number of keypoints per annotation
+    annotation_file: pose_dataset.csv  # File containing keypoint annotations
+    norm_coefficient: 15  # Normalization factor for metrics like PCK (scales to object size)

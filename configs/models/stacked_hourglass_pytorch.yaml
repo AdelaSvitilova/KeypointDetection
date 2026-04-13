@@ -1,40 +1,40 @@
 model:
-  name: stacked_hourglass_pytorch
-  backend: pytorch
-  special_mode: cut_five_dim
+  name: stacked_hourglass_pytorch  # Model architecture name
+  backend: pytorch  # Framework backend (e.g., 'pytorch')
+  special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
   params:
-    input_channels: 3
-    num_keypoints: 23
-    nstack: 2
-    inp_dim: 255
-    oup_dim: 23
+    input_channels: 3  # RGB input channels
+    num_keypoints: 23  # Number of keypoints to predict
+    nstack: 2  # Number of stacked hourglass networks
+    inp_dim: 255  # Input feature dimension
+    oup_dim: 23  # Output dimension (matches keypoints)
 
-keypoint_format: heatmaps
+keypoint_format: heatmaps  # Output format: 'heatmaps'
 
 loss:
-  name: multi_KLDiv # multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted (set parametrs in params)
+  name: multi_KLDiv  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted
   params:
-    losses: ["multi_MSE", "multi_AED"]
-    weights: [0.4, 0.6] # sum must be 1
+    losses: ["multi_MSE", "multi_AED"]  # List of loss functions to combine
+    weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
 
 metrics:
-  names: [PCK_heatmaps, AED_heatmaps]
+  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
 
 dataset:
   params:
     input_size:
-      - 256
-      - 256
+      - 256  # Input height
+      - 256  # Input width
     output_size:
-      - 64
-      - 64
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
 
 train:
-  scheduler: CosineAnnealingWarmRestarts #CosineAnnealingLR, CosineAnnealingWarmRestarts
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
   CosineAnnealingLR:
-    T_max: 50 
-    eta_min: 1e-6
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
   CosineAnnealingWarmRestarts:
-    T_0: 4
-    T_mult: 2
-    eta_min: 1e-8
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate
