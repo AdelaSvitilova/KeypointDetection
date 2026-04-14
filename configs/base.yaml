@@ -3,6 +3,7 @@
 experiment:
   name: exp_10_4  # Experiment identifier
   continue_from: null  # Checkpoint to resume from; null means train from scratch (e.g., epoch_10.pt or best.pt)
+  seed: 42
 
 train:
   batch_size: 8  # Training batch size

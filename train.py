@@ -19,7 +19,12 @@ Features:
     - Prints the configuration for quick verification.
 """
 
-from src.utils.config import load_config
+from src.utils.seed import set_global_seed
+from src.utils.config import load_config, save_config
+
+cfg = load_config("configs/config_list.yaml")
+set_seed(cfg["experiment"]["seed"])
+
 from src.models.factory import get_model
 from src.datasets.factory import get_dataset
 from src.losses.factory import get_loss
@@ -34,6 +39,7 @@ def main():
     cfg = load_config("configs/config_list.yaml")
     print("Configuration loaded:")
     print(cfg)
+    save_config(cfg, experiment_name=cfg["experiment"]["name"])
 
     # === Model creation ===
     model = get_model(cfg["model"]["name"], **cfg["model"]["params"])

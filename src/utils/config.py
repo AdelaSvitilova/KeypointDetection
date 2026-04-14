@@ -1,5 +1,6 @@
 import yaml
 import os
+from pathlib import Path
 
 def merge_configs(base_cfg, override_cfg):
     """Recursively merge two dictionaries.
@@ -78,3 +79,9 @@ def load_config(config_stack_path):
         merge_configs(cfg, override_cfg)
 
     return cfg
+
+def save_config(config, experiment_name):
+    config_path = Path("results", experiment_name, "config.yaml")
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open("config.yaml", "w") as f:
+        yaml.safe_dump(config, f)

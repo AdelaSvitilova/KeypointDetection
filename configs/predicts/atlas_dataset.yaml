@@ -1,5 +1,5 @@
-experiment:
-  name: exp_to_test  # Experiment identifier/name
+# experiment:
+#   name: exp_to_test  # Experiment identifier/name
 
 predict:
   name: atlas  # Prediction task/dataset name
