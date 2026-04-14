@@ -7,6 +7,7 @@ predict:
   images_list: "val.csv"  # Image list file; uncomment for fold: "val_atlas_vertebra_fold_0.csv"
   num_samples: 100  # Number of samples to predict (overrides full list); null uses full dataset
   prefix: val  # Output prefix for prediction files
+  num_select_images: 12
   batch_size: 2  # Inference batch size
   annotation_label: annotation_label.txt  # File mapping keypoint names/indices
   metrics: ["PCK_heatmaps", "AED_heatmaps"]  # Heatmap-based metrics to compute

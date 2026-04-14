@@ -188,8 +188,8 @@ def select_images(cfg, folder_path):
          rows.append(row)
 
    # první a poslední x
-   best_rows = rows[:x]
-   worst_rows = rows[-x:]
+   best_rows = rows[:cfg["predict"]["num_select_images"]]
+   worst_rows = rows[-cfg["predict"]["num_select_images"]:]
 
    copy_files(best_rows, best_base, folder_path, image_column)
    copy_files(worst_rows, worst_base, folder_path, image_column)
@@ -595,11 +595,11 @@ def main():
 
    folder_path = os.path.join("results", cfg["experiment"]["name"])
 
-   # # predikuj obrázky
-   # predict_images(cfg, trainer, loader, metrics, folder_path)
+   # predikuj obrázky
+   predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # # ulož best/worst
-   # select_images(cfg, folder_path)
+   # ulož best/worst
+   select_images(cfg, folder_path)
 
    # vytvoř dataset predikcí
    df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
