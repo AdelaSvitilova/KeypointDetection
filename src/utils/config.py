@@ -83,5 +83,5 @@ def load_config(config_stack_path):
 def save_config(config, experiment_name):
     config_path = Path("results", experiment_name, "config.yaml")
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open("config.yaml", "w") as f:
+    with open(config_path, "w") as f:
         yaml.safe_dump(config, f)

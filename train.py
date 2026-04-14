@@ -23,7 +23,7 @@ from src.utils.seed import set_global_seed
 from src.utils.config import load_config, save_config
 
 cfg = load_config("configs/config_list.yaml")
-set_seed(cfg["experiment"]["seed"])
+set_global_seed(cfg["experiment"]["seed"])
 
 from src.models.factory import get_model
 from src.datasets.factory import get_dataset

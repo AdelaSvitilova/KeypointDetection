@@ -4,7 +4,7 @@ import numpy as np
 
 def set_global_seed(seed_to_set):
     SEED = seed_to_set
-    os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(SEED)
 
     random.seed(SEED)
     np.random.seed(SEED)
