@@ -86,7 +86,7 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
       for hm in heatmaps:
          hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
          y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
-         ax.scatter(x, y, c="red", s=6, label="Heatmap maxima")
+         ax.scatter(x, y, c="red", s=6, label="Prediction")
 
       # Overlay keypoints if provided
       if keypoints is not None:
@@ -95,7 +95,7 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
                kp_set[:, 0] = kp_set[:, 0] * W / 64
                kp_set[:, 1] = kp_set[:, 1] * H / 64
                ax.scatter(kp_set[:, 0], kp_set[:, 1], c="green", s=6, marker="x",
-                        label="Keypoint" if i == 0 else None)
+                        label="Anotation" if i == 0 else None)
 
    handles, labels = ax.get_legend_handles_labels()
    by_label = dict(zip(labels, handles))
