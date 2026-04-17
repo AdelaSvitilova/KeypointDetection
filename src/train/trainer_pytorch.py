@@ -57,7 +57,7 @@ class PytorchTrainer(BaseTrainer):
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        self.log_dir = Path("results") / experiment_name
+        self.log_dir = Path("results") / experiment_name / Path("tensorboard")
 
         self.save_every_epoch = save_every_epoch
         self.use_tensorboard = use_tensorboard

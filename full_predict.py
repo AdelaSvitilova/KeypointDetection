@@ -7,6 +7,7 @@ import cv2
 import csv
 import shutil
 import json
+import seaborn as sns
 
 from src.utils.config import load_config
 from src.models.factory import get_model
@@ -454,25 +455,41 @@ def plot_metric_distributions(stats, output_dir):
       plt.close()
 
 def plot_metrics_per_keypoint(stats, output_dir):
-   print("\n=== Plotting metrics per keypoint ===")
-   os.makedirs(output_dir, exist_ok=True)
+    print("\n=== Plotting metrics per keypoint ===")
+    os.makedirs(output_dir, exist_ok=True)
 
-   stats_df = pd.DataFrame(stats).T
-   stats_df = stats_df.reset_index().rename(columns={"index": "keypoint"})
+    # Seaborn theme + větší fonty
+    sns.set_theme(style="whitegrid", context="talk")  
+    # context="talk" zvětší texty (můžeš dát i "poster" pro ještě větší)
 
-   metrics = ["mean", "median", "std", "max"]
+    stats_df = pd.DataFrame(stats).T
+    stats_df = stats_df.reset_index().rename(columns={"index": "keypoint"})
 
-   for metric in metrics:
-      plt.figure(figsize=(14, 6))
-      plt.bar(stats_df["keypoint"], stats_df[metric],
-               color='skyblue', edgecolor='black')
-      plt.xticks(rotation=45)
-      plt.title(f"{metric.capitalize()} Error per Keypoint")
-      plt.ylabel("Pixel Error")
-      plt.xlabel("Keypoint")
-      plt.tight_layout()
-      plt.savefig(os.path.join(output_dir, f"{metric}_per_keypoint.png"))
-      plt.close()
+    metrics = ["mean", "median", "std", "max"]
+
+    for metric in metrics:
+        plt.figure(figsize=(16, 7))
+
+        ax = sns.barplot(
+            data=stats_df,
+            x="keypoint",
+            y=metric,
+            color="skyblue",
+            edgecolor="black"
+        )
+
+        plt.xticks(rotation=45, ha="right")
+
+        plt.title(f"{metric.capitalize()} Error per Keypoint", fontsize=20, weight="bold")
+        plt.ylabel("Pixel Error", fontsize=16)
+        plt.xlabel("Keypoint", fontsize=16)
+
+        # zvětšení tick labelů
+        ax.tick_params(axis='both', labelsize=12)
+
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"{metric}_per_keypoint.png"), dpi=300)
+        plt.close()
 
 def save_results(cfg, mean, std, metrics_dict, folder_path):
     """
@@ -595,11 +612,11 @@ def main():
 
    folder_path = os.path.join("results", cfg["experiment"]["name"])
 
-   # predikuj obrázky
-   predict_images(cfg, trainer, loader, metrics, folder_path)
+   # # predikuj obrázky
+   # predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # ulož best/worst
-   select_images(cfg, folder_path)
+   # # ulož best/worst
+   # select_images(cfg, folder_path)
 
    # vytvoř dataset predikcí
    df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
