@@ -485,7 +485,7 @@ def plot_metrics_per_keypoint(stats, output_dir):
         plt.xlabel("Keypoint", fontsize=16)
 
         # zvětšení tick labelů
-        ax.tick_params(axis='both', labelsize=12)
+        ax.tick_params(axis='both', labelsize=14)
 
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, f"{metric}_per_keypoint.png"), dpi=300)
