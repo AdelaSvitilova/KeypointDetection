@@ -1,0 +1,107 @@
+model:
+  name: HRNet_pytorch  # Model architecture name
+  backend: pytorch  # Framework backend (e.g., 'pytorch')
+  special_mode: null  # Custom processing mode (removes 5th dimension)
+  params:
+    input_channels: 3  # RGB input channels
+    num_keypoints: 23  # Number of keypoints to predict
+    nstack: 2  # Number of stacked hourglass networks
+    inp_dim: 255  # Input feature dimension
+    oup_dim: 23  # Output dimension (matches keypoints)
+
+MODEL:
+  INIT_WEIGHTS: true
+  NAME: pose_hrnet
+  NUM_JOINTS: 23
+  PRETRAINED: ""
+  TARGET_TYPE: gaussian
+  IMAGE_SIZE:
+    - 256
+    - 256
+  HEATMAP_SIZE:
+    - 64
+    - 64
+  SIGMA: 2
+  EXTRA:
+    PRETRAINED_LAYERS:
+      - conv1
+      - bn1
+      - conv2
+      - bn2
+      - layer1
+      - transition1
+      - stage2
+      - transition2
+      - stage3
+      - transition3
+      - stage4
+    FINAL_CONV_KERNEL: 1
+    STAGE2:
+      NUM_MODULES: 1
+      NUM_BRANCHES: 2
+      BLOCK: BASIC
+      NUM_BLOCKS:
+        - 4
+        - 4
+      NUM_CHANNELS:
+        - 32
+        - 64
+      FUSE_METHOD: SUM
+    STAGE3:
+      NUM_MODULES: 4
+      NUM_BRANCHES: 3
+      BLOCK: BASIC
+      NUM_BLOCKS:
+        - 4
+        - 4
+        - 4
+      NUM_CHANNELS:
+        - 32
+        - 64
+        - 128
+      FUSE_METHOD: SUM
+    STAGE4:
+      NUM_MODULES: 3
+      NUM_BRANCHES: 4
+      BLOCK: BASIC
+      NUM_BLOCKS:
+        - 4
+        - 4
+        - 4
+        - 4
+      NUM_CHANNELS:
+        - 32
+        - 64
+        - 128
+        - 256
+      FUSE_METHOD: SUM
+
+keypoint_format: heatmaps  # Output format: 'heatmaps'
+
+loss:
+  name: MSE  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
+  params:
+    losses: ["MSE", "AED"]  # List of loss functions to combine
+    weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
+
+metrics:
+  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
+
+dataset:
+  params:
+    input_size:
+      - 256  # Input height
+      - 256  # Input width
+    output_size:
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
+
+train:
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
+  CosineAnnealingLR:
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
+  CosineAnnealingWarmRestarts:
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate

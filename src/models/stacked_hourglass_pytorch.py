@@ -1,4 +1,4 @@
-# Model je z https://github.com/princeton-vl/pytorch_stacked_hourglass?tab=readme-ov-file
+# Model from https://github.com/princeton-vl/pytorch_stacked_hourglass?tab=readme-ov-file
 import torch
 import torch.nn as nn
 from .base_model import TorchModel

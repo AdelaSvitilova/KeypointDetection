@@ -10,7 +10,8 @@ configs:
   # - configs/datasets/random_dataset_keypoints.yaml
 
   # setting 3 full dataset
-  - configs/models/stacked_hourglass_pytorch.yaml
+  # - configs/models/stacked_hourglass_pytorch.yaml
+  - configs/models/HRNet_pytorch.yaml
   # - configs/datasets/coco_dataset_full.yaml
   - configs/datasets/atlas_dataset.yaml
 

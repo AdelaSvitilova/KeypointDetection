@@ -42,7 +42,7 @@ def main():
     save_config(cfg, experiment_name=cfg["experiment"]["name"])
 
     # === Model creation ===
-    model = get_model(cfg["model"]["name"], **cfg["model"]["params"])
+    model = get_model(cfg["model"]["name"], cfg=cfg, **cfg["model"]["params"])
     print(f"Model '{cfg['model']['name']}' initialized.")
 
     # === Dataset loading ===
