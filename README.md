@@ -16,23 +16,46 @@ The repository contains only a few test images, along with generated val.csv and
 
 ## Acknowledgements / Third-Party Code
 
-This project is based on the PyTorch implementation of Stacked Hourglass Networks:
+This project uses the following third-party implementations:
 
-PyTorch implementation:
-https://github.com/princeton-vl/pytorch_stacked_hourglass
+---
+
+### Stacked Hourglass Networks (PyTorch implementation)  
+https://github.com/princeton-vl/pytorch_stacked_hourglass  
 
 The above implementation is based on the following original works:
 
-Stacked Hourglass Networks for Human Pose Estimation
-Alejandro Newell, Kaiyu Yang, and Jia Deng
-ECCV 2016
-https://github.com/princeton-vl/pose-hg-train
-Associative Embedding: End-to-end Learning for Joint Detection and Grouping
-Alejandro Newell, Zhiao Huang, and Jia Deng
-NeurIPS 2017
-https://github.com/princeton-vl/pose-ae-train
+Stacked Hourglass Networks for Human Pose Estimation  
+Alejandro Newell, Kaiyu Yang, and Jia Deng  
+ECCV 2016  
+https://github.com/princeton-vl/pose-hg-train  
 
-Original PyTorch implementation by Chris Rockwell.
+Associative Embedding: End-to-end Learning for Joint Detection and Grouping  
+Alejandro Newell, Zhiao Huang, and Jia Deng  
+NeurIPS 2017  
+https://github.com/princeton-vl/pose-ae-train  
 
-The original code is licensed under the BSD 3-Clause License.
+Original PyTorch implementation by Chris Rockwell.  
+
+Licensed under the BSD 3-Clause License.  
+
+---
+
+### High-Resolution Network (HRNet) for Human Pose Estimation  
+https://github.com/HRNet/HRNet-Human-Pose-Estimation  
+
+The above implementation is based on the following works:
+
+Deep High-Resolution Representation Learning for Human Pose Estimation  
+Ke Sun, Bin Xiao, Dong Liu, and Jingdong Wang  
+CVPR 2019  
+
+Simple Baselines for Human Pose Estimation and Tracking  
+Bin Xiao, Haiping Wu, and Yichen Wei  
+ECCV 2018  
+
+Licensed under the MIT License.  
+
+---
+
 Modifications have been made in this repository.
