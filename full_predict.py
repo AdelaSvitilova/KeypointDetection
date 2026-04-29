@@ -565,7 +565,7 @@ def main():
    print(cfg)
 
    # Create model
-   model = get_model(cfg["model"]["name"], **cfg["model"]["params"])
+   model = get_model(cfg["model"]["name"], cfg=cfg, **cfg["model"]["params"])
    print(f"Model '{cfg['model']['name']}' created.")
 
    # Load dataset
@@ -612,11 +612,11 @@ def main():
 
    folder_path = os.path.join("results", cfg["experiment"]["name"])
 
-   # # predikuj obrázky
-   # predict_images(cfg, trainer, loader, metrics, folder_path)
+   # predikuj obrázky
+   predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # # ulož best/worst
-   # select_images(cfg, folder_path)
+   # ulož best/worst
+   select_images(cfg, folder_path)
 
    # vytvoř dataset predikcí
    df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
