@@ -5,7 +5,7 @@ model:
   params:
     input_channels: 3  # RGB input channels
     num_keypoints: 23  # Number of keypoints to predict
-    nstack: 2  # Number of stacked hourglass networks
+    nstack: 8  # Number of stacked hourglass networks
     inp_dim: 255  # Input feature dimension
     oup_dim: 23  # Output dimension (matches keypoints)
 

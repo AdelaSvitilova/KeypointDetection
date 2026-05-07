@@ -63,6 +63,7 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
       image = image.transpose(1, 2, 0)
    image = np.clip(image, 0, 1)
    H, W = image.shape[:2]
+   H_h, W_h = heatmaps[0].shape
 
    # Combine heatmaps
    combined = np.zeros((H, W), dtype=np.float32)
@@ -93,8 +94,8 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
       if keypoints is not None:
          for i, kp_set in enumerate(keypoints):
                kp_set = np.atleast_2d(kp_set).copy()
-               kp_set[:, 0] = kp_set[:, 0] * W / 64
-               kp_set[:, 1] = kp_set[:, 1] * H / 64
+               kp_set[:, 0] = kp_set[:, 0] * W / W_h
+               kp_set[:, 1] = kp_set[:, 1] * H / H_h
                ax.scatter(kp_set[:, 0], kp_set[:, 1], c="green", s=6, marker="x",
                         label="Anotation" if i == 0 else None)
 
