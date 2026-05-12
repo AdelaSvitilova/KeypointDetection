@@ -4,7 +4,6 @@ import os
 import csv
 from .base_dataset import BaseDataset
 
-
 class AtlasDataset(BaseDataset):
     """
     Dataset loader for keypoint detection from CSV annotations (x, y).
@@ -93,26 +92,30 @@ class AtlasDataset(BaseDataset):
         """Return a single sample as dict."""
         path = os.path.join(self.img_dir, self.images[idx])
         image = cv2.imread(path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) / 255.0
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = image.astype(np.uint8)
+        keypoints = self.keypoints[idx].copy()
 
-        orig_h, orig_w = image.shape[:2]
+        orig_h, orig_w = self.input_size
+
+        if self.transform:
+            transformed = self.transform(image=image, keypoints=keypoints)
+            image = transformed["image"]
+            keypoints = transformed["keypoints"]
 
         # Resize image to input size.
-        image = cv2.resize(image, self.input_size)
 
         # Scale keypoints to output size.
         sx = self.output_size[0] / orig_w
         sy = self.output_size[1] / orig_h
 
-        keypoints = self.keypoints[idx].copy()
+        keypoints = keypoints.copy()
         keypoints[:, 0] *= sx
         keypoints[:, 1] *= sy
 
         # Convert to CHW.
+        image = image / 255.0
         image = image.transpose(2, 0, 1)
-
-        if self.transform:
-            image, keypoints = self.transform(image, keypoints)
 
         heatmaps = None
         if self.to_heatmaps:

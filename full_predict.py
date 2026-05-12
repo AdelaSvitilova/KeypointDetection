@@ -11,6 +11,7 @@ import seaborn as sns
 
 from src.utils.config import load_config
 from src.models.factory import get_model
+from src.datasets.transforms.factory import get_transform
 from src.datasets.factory import get_dataset
 from src.metrics.factory import get_metrics
 from src.train.factory import get_trainer
@@ -81,14 +82,14 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
 
    fig, ax = plt.subplots(figsize=(6, 6))
    ax.imshow(image)
-   ax.imshow(combined, cmap="turbo", alpha=0.4)
+   # ax.imshow(combined, cmap="turbo", alpha=0.4)
 
    if show_points:
       # Mark maxima of each heatmap
-      for hm in heatmaps:
-         hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
-         y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
-         ax.scatter(x, y, c="red", s=6, label="Prediction")
+      # for hm in heatmaps:
+      #    hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
+      #    y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
+      #    ax.scatter(x, y, c="red", s=6, label="Prediction")
 
       # Overlay keypoints if provided
       if keypoints is not None:
@@ -99,9 +100,9 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
                ax.scatter(kp_set[:, 0], kp_set[:, 1], c="green", s=6, marker="x",
                         label="Anotation" if i == 0 else None)
 
-   handles, labels = ax.get_legend_handles_labels()
-   by_label = dict(zip(labels, handles))
-   ax.legend(by_label.values(), by_label.keys())
+   # handles, labels = ax.get_legend_handles_labels()
+   # by_label = dict(zip(labels, handles))
+   # ax.legend(by_label.values(), by_label.keys())
 
    ax.axis("off")
    os.makedirs(path_to_save, exist_ok=True)
@@ -570,11 +571,14 @@ def main():
    print(f"Model '{cfg['model']['name']}' created.")
 
    # Load dataset
+   transform = get_transform(cfg["dataset"]["augmentation"], cfg["keypoint_format"], cfg["predict"]["params"]["input_size"])
+
    dataset = get_dataset(
       name=cfg["predict"]["name"],
       load=cfg["predict"]["images_list"],
       num_samples=cfg["predict"]["num_samples"],
       keypoint_format=cfg["keypoint_format"],
+      transform=transform,
       **cfg["predict"]["params"]
    )
    print(f"Dataset loaded: {len(dataset)} images.")
@@ -616,20 +620,20 @@ def main():
    # predikuj obrázky
    predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # ulož best/worst
-   select_images(cfg, folder_path)
+   # # ulož best/worst
+   # select_images(cfg, folder_path)
 
-   # vytvoř dataset predikcí
-   df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
+   # # vytvoř dataset predikcí
+   # df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
 
-   # ulož csv
-   save_dataframe_csv(cfg, folder_path, df)
+   # # ulož csv
+   # save_dataframe_csv(cfg, folder_path, df)
 
-   # ulož json
-   save_dataframe_json(cfg, folder_path, df)
+   # # ulož json
+   # save_dataframe_json(cfg, folder_path, df)
 
-   # analyzuj predikce
-   analyze_prediction(cfg, folder_path, df)
+   # # analyzuj predikce
+   # analyze_prediction(cfg, folder_path, df)
 
 if __name__ == "__main__":
     main()

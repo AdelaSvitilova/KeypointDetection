@@ -26,6 +26,7 @@ cfg = load_config("configs/config_list.yaml")
 set_global_seed(cfg["experiment"]["seed"])
 
 from src.models.factory import get_model
+from src.datasets.transforms.factory import get_transform
 from src.datasets.factory import get_dataset
 from src.losses.factory import get_loss
 from src.metrics.factory import get_metrics
@@ -48,21 +49,27 @@ def main():
     # === Dataset loading ===
 
     # Training dataset
+    transform = get_transform(cfg["dataset"]["augmentation"], cfg["keypoint_format"], cfg["dataset"]["params"]["input_size"])
+
     train_dataset = get_dataset(
         name=cfg["dataset"]["name"],
         load=cfg["dataset"]["train"],
         num_samples=cfg["dataset"]["train_num_samples"],
         keypoint_format=cfg["keypoint_format"],
+        transform=transform,
         **cfg["dataset"]["params"],
     )
     print(f"Training dataset loaded ({len(train_dataset)} samples).")
 
     # Validation dataset
+    transform = get_transform(None, cfg["keypoint_format"], cfg["dataset"]["params"]["input_size"])
+
     val_dataset = get_dataset(
         name=cfg["dataset"]["name"],
         load=cfg["dataset"]["val"],
         num_samples=cfg["dataset"]["val_num_samples"],
         keypoint_format=cfg["keypoint_format"],
+        transform=transform,
         **cfg["dataset"]["params"],
     )
     print(f"Validation dataset loaded ({len(val_dataset)} samples).")

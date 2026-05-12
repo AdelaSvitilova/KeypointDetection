@@ -3,9 +3,9 @@
 
 predict:
   name: atlas  # Prediction task/dataset name
-  model: best.pt  # Model checkpoint; use null for best or specify epoch_X.pt
+  model: epoch_500.pt  # Model checkpoint; use null for best or specify epoch_X.pt
   images_list: "val.csv"  # Image list file; uncomment for fold: "val_atlas_vertebra_fold_0.csv"
-  num_samples: 100  # Number of samples to predict (overrides full list); null uses full dataset
+  num_samples: null  # Number of samples to predict (overrides full list); null uses full dataset
   prefix: val  # Output prefix for prediction files
   num_select_images: 100
   batch_size: 2  # Inference batch size
@@ -16,8 +16,8 @@ predict:
     root_dir: "./data/atlas_full"  # Dataset root directory
     annotation_file: pose_dataset.csv  # Keypoint annotation file
     input_size:
-      - 512  # Input height
-      - 512  # Input width
+      - 256  # Input height
+      - 256  # Input width
     output_size:
-      - 128  # Output heatmap height
-      - 128  # Output heatmap width
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width

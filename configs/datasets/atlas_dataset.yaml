@@ -9,3 +9,38 @@ dataset:
     num_keypoints: 23  # Number of keypoints per annotation
     annotation_file: pose_dataset.csv  # File containing keypoint annotations
     norm_coefficient: 15  # Normalization factor for metrics like PCK (scales to object size)
+  augmentation:
+    flip:
+      use: True
+      probability: 0.5
+
+    clahe:
+      use: True
+      clip_min: 2
+      clip_max: 3
+      tile_grid_min: 8
+      tile_grid_max: 8
+      probability: 0.5
+
+    brightness:
+      use: True
+      brightness_min: -0.2
+      brightness_max: 0.1
+      contrast_min: -0.2
+      contrast_max: 0.2
+      probability: 0.5
+
+    rotate:
+      use: False 
+      min: -7
+      max: 7
+      probability: 0.5
+
+    rotate_translate:
+      use: True
+      rotate_min: -7
+      rotate_max: 7
+      translate_percent_from: -0.05
+      translate_percent_to: 0.05
+      probability: 0.6
+    
