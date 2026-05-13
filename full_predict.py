@@ -571,7 +571,7 @@ def main():
    print(f"Model '{cfg['model']['name']}' created.")
 
    # Load dataset
-   transform = get_transform(cfg["dataset"]["augmentation"], cfg["keypoint_format"], cfg["predict"]["params"]["input_size"])
+   transform = get_transform(None, cfg["keypoint_format"], cfg["predict"]["params"]["input_size"])
 
    dataset = get_dataset(
       name=cfg["predict"]["name"],
@@ -620,20 +620,20 @@ def main():
    # predikuj obrázky
    predict_images(cfg, trainer, loader, metrics, folder_path)
 
-   # # ulož best/worst
-   # select_images(cfg, folder_path)
+   # ulož best/worst
+   select_images(cfg, folder_path)
 
-   # # vytvoř dataset predikcí
-   # df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
+   # vytvoř dataset predikcí
+   df = make_dataset_of_prediction(cfg, trainer, dataset, annotations_label)
 
-   # # ulož csv
-   # save_dataframe_csv(cfg, folder_path, df)
+   # ulož csv
+   save_dataframe_csv(cfg, folder_path, df)
 
-   # # ulož json
-   # save_dataframe_json(cfg, folder_path, df)
+   # ulož json
+   save_dataframe_json(cfg, folder_path, df)
 
-   # # analyzuj predikce
-   # analyze_prediction(cfg, folder_path, df)
+   # analyzuj predikce
+   analyze_prediction(cfg, folder_path, df)
 
 if __name__ == "__main__":
     main()
