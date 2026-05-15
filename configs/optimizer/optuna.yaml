@@ -1,0 +1,79 @@
+optuna:  
+  # train.epochs:
+  #   type: int
+  #   low: 2
+  #   high: 10
+  train.scheduler:
+    type: cat
+    choices: [CosineAnnealingLR, CosineAnnealingWarmRestarts]
+
+  model.params.nstack:
+    type: int
+    low: 2
+    high: 8
+
+  loss.name:
+    type: cat 
+    choices:  [multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted]
+  loss.params.losses:
+    type: list 
+    choices1:  [multi_MSE, multi_L2Norm, multi_Huber]
+    choices2:  [multi_AED, multi_KLDiv]
+  loss.params.weights:
+    type: weights 
+    low: 0.1
+    high: 0.9
+
+  dataset.augmentation.flip.use:
+    type: cat
+    choices: [True, False]
+
+  dataset.augmentation.clahe.use:
+    type: cat
+    choices: [True, False]
+
+  dataset.augmentation.brightness.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.brightness.brightness_min:
+    type: float
+    low: -0.3
+    high: -0.05
+  dataset.augmentation.brightness.brightness_max:
+    type: float
+    low: 0.05
+    high: 0.3
+    dataset.augmentation.brightness.contrast_min:
+    type: float
+    low: -0.3
+    high: -0.05
+  dataset.augmentation.brightness.contrast_max:
+    type: float
+    low: 0.05
+    high: 0.3
+
+  dataset.augmentation.rotate.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.rotate.min:
+    type: int
+    low: -10
+    high: -3
+  dataset.augmentation.rotate.max:
+    type: int
+    low: 3
+    high: 10
+
+  dataset.augmentation.translate.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.translate.translate_percent_from:
+    type: float
+    low: -0.09
+    high: -0.02
+  dataset.augmentation.translate.translate_percent_to:
+    type: float
+    low: 0.02
+    high: 0.09
+
+  

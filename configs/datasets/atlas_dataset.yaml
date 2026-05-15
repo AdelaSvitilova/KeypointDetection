@@ -31,16 +31,14 @@ dataset:
       probability: 0.5
 
     rotate:
-      use: False 
+      use: True 
       min: -7
       max: 7
       probability: 0.5
 
-    rotate_translate:
+    translate:
       use: True
-      rotate_min: -7
-      rotate_max: 7
       translate_percent_from: -0.05
       translate_percent_to: 0.05
-      probability: 0.6
+      probability: 0.5
     

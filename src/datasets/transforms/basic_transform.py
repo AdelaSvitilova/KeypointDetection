@@ -7,7 +7,7 @@ def resize(input_size, **kward):
 def random_rotate(min, max, probability, **kward):
     return A.Rotate(limit=(min, max), p=probability)
 
-def affine(translate_percent_from, translate_percent_to, rotate_min, rotate_max, probability, **kward):
+def affine(translate_percent_from, translate_percent_to, probability, rotate_min=0, rotate_max=0, **kward):
     return A.Affine(
         translate_percent={"x": (translate_percent_from, translate_percent_to), "y": (translate_percent_from, translate_percent_to)},
         rotate=(rotate_min, rotate_max),

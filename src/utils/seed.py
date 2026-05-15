@@ -1,6 +1,7 @@
 import os
 import random
 import numpy as np
+import optuna
 
 def set_global_seed(seed_to_set):
     SEED = seed_to_set
@@ -8,6 +9,7 @@ def set_global_seed(seed_to_set):
 
     random.seed(SEED)
     np.random.seed(SEED)
+    sampler = optuna.samplers.TPESampler(seed=SEED)
 
     # PyTorch
     try:

@@ -9,4 +9,6 @@ configs:
   - configs/datasets/atlas_dataset.yaml
 
   - configs/predicts/atlas_dataset.yaml
+
+  - configs/optimizer/optuna.yaml
   

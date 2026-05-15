@@ -4,11 +4,11 @@ import albumentations as A
 def get_transform(
     transform, format, input_size
 ):
-    print(transform)
+    print("transforms: ", transform)
     # Mapping from dataset name to dataset class
     transforms = {
         "rotate": random_rotate,
-        "rotate_translate": affine,
+        "translate": affine,
         "brightness": random_brightness,
         "flip": flip,
         "clahe": clahe,
@@ -20,7 +20,6 @@ def get_transform(
     
     if transform:
         for name, params in transform.items():
-            print(name)
             if name not in transforms:
                 raise ValueError(f"Unknown transform: {name}")
 

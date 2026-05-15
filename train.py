@@ -19,8 +19,12 @@ Features:
     - Prints the configuration for quick verification.
 """
 
+import optuna
+from pathlib import Path
+
 from src.utils.seed import set_global_seed
 from src.utils.config import load_config, save_config
+from src.utils.optuna_config import apply_optuna, apply_optuna_best
 
 cfg = load_config("configs/config_list.yaml")
 set_global_seed(cfg["experiment"]["seed"])
@@ -32,16 +36,14 @@ from src.losses.factory import get_loss
 from src.metrics.factory import get_metrics
 from src.train.factory import get_trainer
 
-
-def main():
-    """Main entry point for the training pipeline."""
-
-    # === Load configuration ===
+def load_cfg():
     cfg = load_config("configs/config_list.yaml")
     print("Configuration loaded:")
     print(cfg)
     save_config(cfg, experiment_name=cfg["experiment"]["name"])
+    return cfg
 
+def train_model(cfg):
     # === Model creation ===
     model = get_model(cfg["model"]["name"], cfg=cfg, **cfg["model"]["params"])
     print(f"Model '{cfg['model']['name']}' initialized.")
@@ -97,14 +99,57 @@ def main():
 
     print(f"Trainer initialized for backend '{cfg['model']['backend']}'.")
 
+    train_loss = float('inf')
     # === Start training ===
     if cfg["experiment"]["continue_from"] is None:
         print("Starting training from scratch...")
-        trainer.train()
+        train_loss = trainer.train()
     else:
         checkpoint = cfg["experiment"]["continue_from"]
         print(f"Resuming training from checkpoint: {checkpoint}")
-        trainer.continue_train(checkpoint)
+        train_loss = trainer.continue_train(checkpoint)
+    
+    return train_loss
+
+def objective(trial, cfg):
+    cfg_optuna = apply_optuna(cfg, trial)
+
+    print(cfg_optuna)
+
+    score = train_model(cfg_optuna)
+
+    return score
+
+def main():
+    """Main entry point for the training pipeline."""
+
+    cfg = load_cfg()
+
+    import uuid
+    if cfg["experiment"]["optuna"]:
+        print("Optimalization by optuna")
+        study = optuna.create_study(
+            direction="minimize",
+            study_name=f"optuna_experiment_{uuid.uuid4()}",
+            storage=None, #f"sqlite:///results/{cfg["experiment"]["name"]}/optuna_experiment.db",
+            load_if_exists=False
+        )
+        study.optimize(lambda trial: objective(trial, cfg), n_trials=cfg["experiment"]["optuna_trials"])
+
+        path = Path("results", cfg["experiment"]["name"], "optuna_results.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            print("Best score:", study.best_value, file=f)
+
+            print("Best params:", file=f)
+
+            for k, v in study.best_params.items():
+                print(f"{k}: {v}", file=f)
+
+        cfg_final = apply_optuna_best(cfg, study.best_params)
+        save_config(cfg_final, experiment_name=cfg["experiment"]["name"], file_name="config_final.yaml")
+
+    else:
+        loss = train_model(cfg)
 
 
 if __name__ == "__main__":

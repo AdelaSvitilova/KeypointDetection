@@ -72,6 +72,8 @@ class PytorchTrainer(BaseTrainer):
 
         best_val_loss = best_val_loss
 
+        train_loss = float('inf')
+
         log_file = self.checkpoint_dir / "training.log"
 
         for epoch in range(start_epoch + 1, self.epochs + 1):
@@ -204,6 +206,8 @@ class PytorchTrainer(BaseTrainer):
 
         if self.use_tensorboard:
             writer.close()
+
+        return train_loss
 
     def save_checkpoint(self, epoch, best_val_loss, path):
         checkpoint = {
