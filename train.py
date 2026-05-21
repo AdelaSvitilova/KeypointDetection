@@ -43,7 +43,7 @@ def load_cfg():
     save_config(cfg, experiment_name=cfg["experiment"]["name"])
     return cfg
 
-def train_model(cfg):
+def train_model(cfg, trial):
     # === Model creation ===
     model = get_model(cfg["model"]["name"], cfg=cfg, **cfg["model"]["params"])
     print(f"Model '{cfg['model']['name']}' initialized.")
@@ -94,6 +94,7 @@ def train_model(cfg):
         experiment_name=cfg["experiment"]["name"],
         keypoint_format=cfg["keypoint_format"],
         special_mode=cfg["model"]["special_mode"],
+        trial=trial,
         **cfg["train"],
     )
 
@@ -116,7 +117,7 @@ def objective(trial, cfg):
 
     print(cfg_optuna)
 
-    score = train_model(cfg_optuna)
+    score = train_model(cfg_optuna, trial)
 
     return score
 
@@ -130,8 +131,9 @@ def main():
         print("Optimalization by optuna")
         study = optuna.create_study(
             direction="minimize",
+            pruner=optuna.pruners.HyperbandPruner(),
             study_name=f"optuna_experiment_{uuid.uuid4()}",
-            storage=None, #f"sqlite:///results/{cfg["experiment"]["name"]}/optuna_experiment.db",
+            storage=f"sqlite:///results/{cfg["experiment"]["name"]}/optuna_experiment.db",
             load_if_exists=False
         )
         study.optimize(lambda trial: objective(trial, cfg), n_trials=cfg["experiment"]["optuna_trials"])
@@ -149,7 +151,7 @@ def main():
         save_config(cfg_final, experiment_name=cfg["experiment"]["name"], file_name="config_final.yaml")
 
     else:
-        loss = train_model(cfg)
+        loss = train_model(cfg, trial=None)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ from .base_trainer import BaseTrainer
 from .utils import collate_fn
 from pathlib import Path
 import time
+import optuna
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -22,11 +23,12 @@ class PytorchTrainer(BaseTrainer):
         experiment_name="exp0",
         keypoint_format="keypoints",
         special_mode=None,
+        trial=None,
         device=None,
         use_tensorboard=True,
         scheduler=None,
         CosineAnnealingLR=None,
-        CosineAnnealingWarmRestarts=None
+        CosineAnnealingWarmRestarts=None,
     ):
         super().__init__(
             model=model,
@@ -57,7 +59,9 @@ class PytorchTrainer(BaseTrainer):
         self.checkpoint_dir = Path("results") / experiment_name
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        self.log_dir = Path("results") / experiment_name / Path("tensorboard")
+        self.trial = trial
+        if self.trial:
+            self.log_dir = Path("results") / experiment_name / Path("tensorboard") / f"trial_{self.trial}"
 
         self.save_every_epoch = save_every_epoch
         self.use_tensorboard = use_tensorboard
@@ -91,7 +95,13 @@ class PytorchTrainer(BaseTrainer):
                 y_h = y if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
 
                 self.optimizer.zero_grad()
-                preds = self.model(x)
+                try:
+                    preds = self.model(x)
+                except torch.cuda.OutOfMemoryError:
+                    if self.trial:
+                        raise optuna.TrialPruned()
+                    else:
+                        raise 
 
                 # loss = torch-based → backprop funguje
                 if self.special_mode=="cut_five_dim" and preds.ndim == 5:
@@ -203,6 +213,12 @@ class PytorchTrainer(BaseTrainer):
                 for name, value in val_metrics.items():
                     writer.add_scalar(f"Metrics/Validation/{name}", value, epoch)
                 writer.flush()
+
+            if self.trial:
+                self.trial.report(train_loss, epoch)
+
+                if self.trial.should_prune():
+                    raise optuna.TrialPruned()
 
         if self.use_tensorboard:
             writer.close()
