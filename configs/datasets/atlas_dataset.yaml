@@ -8,7 +8,7 @@ dataset:
     root_dir: "./data/atlas_full"  # Base directory for dataset files
     num_keypoints: 23  # Number of keypoints per annotation
     annotation_file: pose_dataset.csv  # File containing keypoint annotations
-    norm_coefficient: 15  # Normalization factor for metrics like PCK (scales to object size)
+    norm_coefficient: 10  # Normalization factor for metrics like PCK (scales to object size)
   augmentation:
     flip:
       use: True
