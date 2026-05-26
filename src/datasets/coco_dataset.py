@@ -116,28 +116,26 @@ class COCODataset(BaseDataset):
         # Load image and convert to RGB, normalize to [0,1]
         path = os.path.join(self.img_dir, self.images[idx])
         image = cv2.imread(path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) / 255.0
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        orig_h, orig_w = image.shape[:2]
+        orig_h, orig_w = self.input_size
 
-        # Resize image to input size
-        image = cv2.resize(image, self.input_size)
+        if self.transform:
+            transformed = self.transform(image=image, keypoints=keypoints)
+            image = transformed["image"]
+            keypoints = transformed["keypoints"]
 
-        # Compute scaling factors for keypoints
+         # Scale keypoints to output size.
         sx = self.output_size[0] / orig_w
         sy = self.output_size[1] / orig_h
 
-        # Copy keypoints and scale to output size
         keypoints = self.keypoints[idx].copy()
         keypoints[:, 0] *= sx
         keypoints[:, 1] *= sy
 
         # Convert image to CHW format
+        image = image / 255.0
         image = image.transpose(2, 0, 1)
-
-        # Apply optional transform
-        if self.transform:
-            image, keypoints = self.transform(image, keypoints)
 
         # Convert keypoints to heatmaps if requested
         heatmaps = None
