@@ -103,8 +103,6 @@ class AtlasDataset(BaseDataset):
             image = transformed["image"]
             keypoints = transformed["keypoints"]
 
-        # Resize image to input size.
-
         # Scale keypoints to output size.
         sx = self.output_size[0] / orig_w
         sy = self.output_size[1] / orig_h

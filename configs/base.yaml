@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: EXP_opt #EXP_augm  # Experiment identifier
+  name: EXP_augm #EXP_augm  # Experiment identifier
   continue_from: null  # Checkpoint to resume from; null means train from scratch (e.g., epoch_10.pt or best.pt)
   seed: 42
   optuna: True
