@@ -61,7 +61,7 @@ class PytorchTrainer(BaseTrainer):
 
         self.trial = trial
         if self.trial:
-            self.log_dir = Path("results") / experiment_name / Path("tensorboard") / f"trial_{self.trial}"
+            self.log_dir = Path("results") / experiment_name / Path("tensorboard") / f"trial_{self.trial.number}"
         else:
             self.log_dir = Path("results") / experiment_name / Path("tensorboard")
 
