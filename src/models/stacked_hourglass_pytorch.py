@@ -105,7 +105,7 @@ class Merge(nn.Module):
         return self.conv(x)
 
 class StackedHourglassPytorch(TorchModel):
-    def __init__(self, nstack, inp_dim, oup_dim, bn=False, increase=0, **kwargs):
+    def __init__(self, nstack, inp_dim, num_keypoints, bn=False, increase=0, **kwargs):
         super(StackedHourglassPytorch, self).__init__()
         
         self.nstack = nstack
@@ -128,9 +128,9 @@ class StackedHourglassPytorch(TorchModel):
             Conv(inp_dim, inp_dim, 1, bn=True, relu=True)
         ) for i in range(nstack)] )
         
-        self.outs = nn.ModuleList( [Conv(inp_dim, oup_dim, 1, relu=False, bn=False) for i in range(nstack)] )
+        self.outs = nn.ModuleList( [Conv(inp_dim, num_keypoints, 1, relu=False, bn=False) for i in range(nstack)] )
         self.merge_features = nn.ModuleList( [Merge(inp_dim, inp_dim) for i in range(nstack-1)] )
-        self.merge_preds = nn.ModuleList( [Merge(oup_dim, inp_dim) for i in range(nstack-1)] )
+        self.merge_preds = nn.ModuleList( [Merge(num_keypoints, inp_dim) for i in range(nstack-1)] )
         self.nstack = nstack
 
     def forward(self, imgs):
@@ -147,11 +147,3 @@ class StackedHourglassPytorch(TorchModel):
             if i < self.nstack - 1:
                 x = x + self.merge_preds[i](preds) + self.merge_features[i](feature)
         return torch.stack(combined_hm_preds, 1)
-    
-    @property
-    def input_channels(self):
-        return self._input_channels
-
-    @property
-    def num_keypoints(self):
-        return self._num_keypoints

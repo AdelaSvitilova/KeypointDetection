@@ -10,5 +10,5 @@ configs:
 
   - configs/predicts/atlas_dataset.yaml
 
-  - configs/optimizer/optuna.yaml
+  # - configs/optimizer/optuna.yaml
   

@@ -259,7 +259,6 @@ class HRNetPytorch(TorchModel):
 
     def __init__(self, cfg, **kwargs):
         self.inplanes = 64
-        extra = cfg['MODEL']['EXTRA']
         super(HRNetPytorch, self).__init__()
 
         # stem net
@@ -273,9 +272,9 @@ class HRNetPytorch(TorchModel):
         
         self.layer1 = self._make_layer(Bottleneck, 64, 4)
 
-        self.stage2_cfg = cfg['MODEL']['EXTRA']['STAGE2']
-        num_channels = self.stage2_cfg['NUM_CHANNELS']
-        block = blocks_dict[self.stage2_cfg['BLOCK']]
+        self.stage2_cfg = cfg['model']['params']['stage2']
+        num_channels = self.stage2_cfg['num_channels']
+        block = blocks_dict[self.stage2_cfg['block']]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -283,9 +282,9 @@ class HRNetPytorch(TorchModel):
         self.stage2, pre_stage_channels = self._make_stage(
             self.stage2_cfg, num_channels)
 
-        self.stage3_cfg = cfg['MODEL']['EXTRA']['STAGE3']
-        num_channels = self.stage3_cfg['NUM_CHANNELS']
-        block = blocks_dict[self.stage3_cfg['BLOCK']]
+        self.stage3_cfg = cfg['model']['params']['stage3']
+        num_channels = self.stage3_cfg['num_channels']
+        block = blocks_dict[self.stage3_cfg['block']]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -294,9 +293,9 @@ class HRNetPytorch(TorchModel):
         self.stage3, pre_stage_channels = self._make_stage(
             self.stage3_cfg, num_channels)
 
-        self.stage4_cfg = cfg['MODEL']['EXTRA']['STAGE4']
-        num_channels = self.stage4_cfg['NUM_CHANNELS']
-        block = blocks_dict[self.stage4_cfg['BLOCK']]
+        self.stage4_cfg = cfg['model']['params']['stage4']
+        num_channels = self.stage4_cfg['num_channels']
+        block = blocks_dict[self.stage4_cfg['block']]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -307,13 +306,15 @@ class HRNetPytorch(TorchModel):
 
         self.final_layer = nn.Conv2d(
             in_channels=pre_stage_channels[0],
-            out_channels=cfg['MODEL']['NUM_JOINTS'],
-            kernel_size=extra['FINAL_CONV_KERNEL'],
+            out_channels=cfg['model']['params']['num_keypoints'],
+            kernel_size=cfg['model']['params']['final_conv_kernel'],
             stride=1,
-            padding=1 if extra['FINAL_CONV_KERNEL'] == 3 else 0
+            padding=1 if cfg['model']['params']['final_conv_kernel'] == 3 else 0
         )
 
-        self.pretrained_layers = cfg['MODEL']['EXTRA']['PRETRAINED_LAYERS']
+        self.pretrained_layers = cfg['model']['params']['pretrained_layers']
+
+        self._num_keypoints = cfg['model']['params']['num_keypoints']
 
     def _make_transition_layer(
             self, num_channels_pre_layer, num_channels_cur_layer):
@@ -377,12 +378,12 @@ class HRNetPytorch(TorchModel):
 
     def _make_stage(self, layer_config, num_inchannels,
                     multi_scale_output=True):
-        num_modules = layer_config['NUM_MODULES']
-        num_branches = layer_config['NUM_BRANCHES']
-        num_blocks = layer_config['NUM_BLOCKS']
-        num_channels = layer_config['NUM_CHANNELS']
-        block = blocks_dict[layer_config['BLOCK']]
-        fuse_method = layer_config['FUSE_METHOD']
+        num_modules = layer_config['num_modules']
+        num_branches = layer_config['num_branches']
+        num_blocks = layer_config['num_blocks']
+        num_channels = layer_config['num_channels']
+        block = blocks_dict[layer_config['block']]
+        fuse_method = layer_config['fuse_method']
 
         modules = []
         for i in range(num_modules):
@@ -417,7 +418,7 @@ class HRNetPytorch(TorchModel):
         x = self.layer1(x)
 
         x_list = []
-        for i in range(self.stage2_cfg['NUM_BRANCHES']):
+        for i in range(self.stage2_cfg['num_branches']):
             if self.transition1[i] is not None:
                 x_list.append(self.transition1[i](x))
             else:
@@ -425,7 +426,7 @@ class HRNetPytorch(TorchModel):
         y_list = self.stage2(x_list)
 
         x_list = []
-        for i in range(self.stage3_cfg['NUM_BRANCHES']):
+        for i in range(self.stage3_cfg['num_branches']):
             if self.transition2[i] is not None:
                 x_list.append(self.transition2[i](y_list[-1]))
             else:
@@ -433,7 +434,7 @@ class HRNetPytorch(TorchModel):
         y_list = self.stage3(x_list)
 
         x_list = []
-        for i in range(self.stage4_cfg['NUM_BRANCHES']):
+        for i in range(self.stage4_cfg['num_branches']):
             if self.transition3[i] is not None:
                 x_list.append(self.transition3[i](y_list[-1]))
             else:
@@ -469,26 +470,17 @@ class HRNetPytorch(TorchModel):
             need_init_state_dict = {}
             for name, m in pretrained_state_dict.items():
                 if name.split('.')[0] in self.pretrained_layers \
-                   or self.pretrained_layers[0] is '*':
+                   or self.pretrained_layers[0] == '*':
                     need_init_state_dict[name] = m
             self.load_state_dict(need_init_state_dict, strict=False)
         elif pretrained:
             logger.error('=> please download pre-trained models first!')
             raise ValueError('{} is not exist!'.format(pretrained))
 
-    @property
-    def input_channels(self):
-        return 32
-
-    @property
-    def num_keypoints(self):
-        return 23
-
-
 def get_pose_net(cfg, is_train, **kwargs):
     model = PoseHighResolutionNet(cfg, **kwargs)
 
-    if is_train and cfg['MODEL']['INIT_WEIGHTS']:
-        model.init_weights(cfg['MODEL']['PRETRAINED'])
+    if is_train and cfg['model']['params']['init_weights']:
+        model.init_weights(cfg['model']['params']['pretrained'])
 
     return model

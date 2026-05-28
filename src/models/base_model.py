@@ -9,14 +9,8 @@ class ModelInterface(ABC):
         pass
 
     @property
-    @abstractmethod
-    def input_channels(self):
-        pass
-
-    @property
-    @abstractmethod
     def num_keypoints(self):
-        pass
+        return self._num_keypoints
 
 import torch
 import torch.nn as nn
@@ -47,10 +41,6 @@ class KerasModel(Model, ModelInterface):
 
     def __init__(self):
         super().__init__()
-
-    @property
-    def input_channels(self):
-        return self._input_channels
 
     @property
     def num_keypoints(self):

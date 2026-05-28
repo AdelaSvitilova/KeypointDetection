@@ -4,10 +4,9 @@ model:
   special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
   params:
     input_channels: 3  # RGB input channels
-    num_keypoints: 23  # Number of keypoints to predict
+    num_keypoints: 23  # Number of keypoints to predict (otput dimension)
     nstack: 2  # Number of stacked hourglass networks
-    inp_dim: 255  # Input feature dimension
-    oup_dim: 23  # Output dimension (matches keypoints)
+    inp_dim: 256  # Input feature dimension
 
 keypoint_format: heatmaps  # Output format: 'heatmaps'
 
