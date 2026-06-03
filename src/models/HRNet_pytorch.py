@@ -314,6 +314,8 @@ class HRNetPytorch(TorchModel):
 
         self.pretrained_layers = cfg['model']['params']['pretrained_layers']
 
+        self.init_weights(cfg['model']['params']['pretrained'])
+
         self._num_keypoints = cfg['model']['params']['num_keypoints']
 
     def _make_transition_layer(
@@ -446,7 +448,8 @@ class HRNetPytorch(TorchModel):
         return x
 
     def init_weights(self, pretrained=''):
-        logger.info('=> init weights from normal distribution')
+        #logger.info('=> init weights from normal distribution')
+        print('=> init weights from normal distribution')
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -463,9 +466,16 @@ class HRNetPytorch(TorchModel):
                     if name in ['bias']:
                         nn.init.constant_(m.bias, 0)
 
+        print(pretrained)
         if os.path.isfile(pretrained):
-            pretrained_state_dict = torch.load(pretrained)
-            logger.info('=> loading pretrained model {}'.format(pretrained))
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            pretrained_state_dict = torch.load(
+                pretrained,
+                map_location=device
+            )
+            #pretrained_state_dict = torch.load(pretrained)
+            #logger.info('=> loading pretrained model {}'.format(pretrained))
+            print('=> loading pretrained model {}'.format(pretrained))
 
             need_init_state_dict = {}
             for name, m in pretrained_state_dict.items():
@@ -474,7 +484,8 @@ class HRNetPytorch(TorchModel):
                     need_init_state_dict[name] = m
             self.load_state_dict(need_init_state_dict, strict=False)
         elif pretrained:
-            logger.error('=> please download pre-trained models first!')
+            #logger.error('=> please download pre-trained models first!')
+            print('=> please download pre-trained models first!')
             raise ValueError('{} is not exist!'.format(pretrained))
 
 def get_pose_net(cfg, is_train, **kwargs):

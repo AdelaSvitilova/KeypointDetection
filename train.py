@@ -39,7 +39,7 @@ from src.train.factory import get_trainer
 def load_cfg():
     cfg = load_config("configs/config_list.yaml")
     print("Configuration loaded:")
-    print(cfg)
+    #print(cfg)
     save_config(cfg, experiment_name=cfg["experiment"]["name"])
     return cfg
 
