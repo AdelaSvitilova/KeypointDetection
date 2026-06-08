@@ -91,13 +91,20 @@ class PytorchTrainer(BaseTrainer):
             running_loss = 0.0
 
             for item in train_loader:
-                # převod na torch.Tensor až tady
-                x = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
-                y = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
-                y_h = y if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
+                # # převod na torch.Tensor až tady
+                # x = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                # y = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
+                # y_h = y if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
 
-                self.optimizer.zero_grad()
+                # self.optimizer.zero_grad()
                 try:
+                    # převod na torch.Tensor až tady
+                    x = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                    y = torch.as_tensor(item["keypoints"], dtype=torch.float32, device=self.device)
+                    y_h = y if item["heatmaps"] is None else torch.as_tensor(item["heatmaps"], dtype=torch.float32, device=self.device)
+
+                    self.optimizer.zero_grad()
+
                     preds = self.model(x)
                 except torch.cuda.OutOfMemoryError:
                     if self.trial:
