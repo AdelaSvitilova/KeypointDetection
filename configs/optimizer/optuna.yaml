@@ -48,7 +48,7 @@ optuna:
     type: float
     low: 0.05
     high: 0.3
-    dataset.augmentation.brightness.contrast_min:
+  dataset.augmentation.brightness.contrast_min:
     type: float
     low: -0.3
     high: -0.05

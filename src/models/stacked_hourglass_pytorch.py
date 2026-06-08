@@ -1,13 +1,18 @@
-# Model from https://github.com/princeton-vl/pytorch_stacked_hourglass?tab=readme-ov-file
+# Stacked Hourglass model implementation based on:
+# https://github.com/princeton-vl/pytorch_stacked_hourglass?tab=readme-ov-file
 import torch
 import torch.nn as nn
 from .base_model import TorchModel
 
+# Max pooling layer alias
 Pool = nn.MaxPool2d
+
+# Helper function for batch normalization (not used inside main model flow directly)
 def batchnorm(x):
     return nn.BatchNorm2d(x.size()[1])(x)
 
-# Convoluční blok
+
+# Basic convolution block used throughout the network
 class Conv(nn.Module):
     def __init__(self, inp_dim, out_dim, kernel_size=3, stride = 1, bn = False, relu = True):
         super(Conv, self).__init__()
@@ -28,8 +33,9 @@ class Conv(nn.Module):
         if self.relu is not None:
             x = self.relu(x)
         return x
-    
-# residuální blok - ne resnet struktura
+
+
+# Residual block used as a building unit for feature extraction
 class Residual(nn.Module):
     def __init__(self, inp_dim, out_dim):
         super(Residual, self).__init__()
@@ -62,8 +68,9 @@ class Residual(nn.Module):
         out = self.conv3(out)
         out += residual
         return out 
-    
-# Jeden hourglass model
+
+
+# Hourglass module used for multi-scale feature learning
 class Hourglass(nn.Module):
     def __init__(self, n, f, bn=None, increase=0):
         super(Hourglass, self).__init__()
@@ -73,7 +80,7 @@ class Hourglass(nn.Module):
         self.pool1 = Pool(2, 2)
         self.low1 = Residual(f, nf)
         self.n = n
-        # Recursive hourglass
+        # Recursive hourglass structure
         if self.n > 1:
             self.low2 = Hourglass(n-1, nf, bn=bn)
         else:
@@ -90,12 +97,14 @@ class Hourglass(nn.Module):
         up2  = self.up2(low3)
         return up1 + up2
 
-# pomocná třída  
+
+# Utility module (not used directly in forward pass here)
 class UnFlatten(nn.Module):
     def forward(self, input):
         return input.view(-1, 256, 4, 4)
 
-# pomocná třída  
+
+# Simple feature merging layer (1x1 convolution)
 class Merge(nn.Module):
     def __init__(self, x_dim, y_dim):
         super(Merge, self).__init__()
@@ -104,11 +113,15 @@ class Merge(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
+
+# Stacked Hourglass network for keypoint/pose estimation
 class StackedHourglassPytorch(TorchModel):
     def __init__(self, nstack, inp_dim, num_keypoints, bn=False, increase=0, **kwargs):
         super(StackedHourglassPytorch, self).__init__()
         
         self.nstack = nstack
+        
+        # Initial feature extraction from input image
         self.pre = nn.Sequential(
             Conv(3, 64, 7, 2, bn=True, relu=True),
             Residual(64, 128),
@@ -117,33 +130,43 @@ class StackedHourglassPytorch(TorchModel):
             Residual(128, inp_dim)
         )
         
+        # Stack of hourglass modules for iterative refinement
         self.hgs = nn.ModuleList( [
         nn.Sequential(
             Hourglass(4, inp_dim, bn, increase),
         ) for i in range(nstack)] )
         
+        # Feature processing after each hourglass stack
         self.features = nn.ModuleList( [
         nn.Sequential(
             Residual(inp_dim, inp_dim),
             Conv(inp_dim, inp_dim, 1, bn=True, relu=True)
         ) for i in range(nstack)] )
         
+        # Heatmap prediction heads (one per stack)
         self.outs = nn.ModuleList( [Conv(inp_dim, num_keypoints, 1, relu=False, bn=False) for i in range(nstack)] )
+        
+        # Feature and prediction merging between stacks
         self.merge_features = nn.ModuleList( [Merge(inp_dim, inp_dim) for i in range(nstack-1)] )
         self.merge_preds = nn.ModuleList( [Merge(num_keypoints, inp_dim) for i in range(nstack-1)] )
         self.nstack = nstack
 
     def forward(self, imgs):
-        ## our posenet
-        #x = imgs.permute(0, 3, 1, 2) #x of size 1,3,inpdim,inpdim
+        # Forward pass of stacked hourglass network
         x = imgs
         x = self.pre(x)
         combined_hm_preds = []
+        
+        # Iterative refinement across stacked hourglass modules
         for i in range(self.nstack):
             hg = self.hgs[i](x)
             feature = self.features[i](hg)
             preds = self.outs[i](feature)
             combined_hm_preds.append(preds)
+            
+            # Pass information to next stack
             if i < self.nstack - 1:
                 x = x + self.merge_preds[i](preds) + self.merge_features[i](feature)
+                
+        # Return predictions from all stacks
         return torch.stack(combined_hm_preds, 1)
