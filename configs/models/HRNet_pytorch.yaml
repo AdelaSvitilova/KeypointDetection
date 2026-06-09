@@ -30,7 +30,7 @@ model:
       num_channels: [32, 64, 128, 256]
       fuse_method: SUM
 
-    pretrained: "results/pose_hrnet_w32_256x192.pth"
+    pretrained:  "" #"results/pose_hrnet_w32_256x192.pth"
     pretrained_layers: [conv1, bn1, conv2, bn2, layer1, transition1, stage2, transition2, stage3, transition3, stage4]
 
 

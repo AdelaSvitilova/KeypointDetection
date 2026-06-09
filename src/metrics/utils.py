@@ -30,3 +30,26 @@ def heatmaps_to_keypoints(heatmaps):
     keypoints = np.stack([x, y, visible], axis=2)  # (B, K, 3)
 
     return keypoints
+
+def scale_keypoints(keypoints, orig_size, pred_size):
+    """
+    keypoints: (B, N, 2) nebo (B, N, 3)
+    orig_size: [heights(B,), widths(B,)]
+    pred_size: [H_in, W_in]
+
+    vrací: (B, N, 2)
+    """
+
+    keypoints = np.asarray(keypoints)
+
+    H_in, W_in = pred_size
+
+    H_orig = np.asarray(orig_size[0])  # (B,)
+    W_orig = np.asarray(orig_size[1])  # (B,)
+
+    scale = np.stack(
+        [W_orig / W_in, H_orig / H_in],
+        axis=1
+    )  # (B, 2)
+
+    return keypoints[:, :, :2] * scale[:, None, :]

@@ -17,16 +17,16 @@ loss:
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
 
 metrics:
-  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
+  names: [PCK_heatmaps, AED_heatmaps, cobb_angle]  # Metrics to evaluate (PCK/AED on heatmaps)
 
 dataset:
   params:
     input_size:
       - 256  # Input height
-      - 256  # Input width
+      - 192  # Input width
     output_size:
       - 64  # Output heatmap height
-      - 64  # Output heatmap width
+      - 48  # Output heatmap width
 
 train:
   scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts

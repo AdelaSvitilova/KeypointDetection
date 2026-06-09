@@ -96,7 +96,9 @@ class AtlasDataset(BaseDataset):
         image = image.astype(np.uint8)
         keypoints = self.keypoints[idx].copy()
 
+        img_size = image.shape
         orig_h, orig_w = self.input_size
+        out_h, out_w = self.output_size
 
         if self.transform:
             transformed = self.transform(image=image, keypoints=keypoints)
@@ -104,10 +106,9 @@ class AtlasDataset(BaseDataset):
             keypoints = transformed["keypoints"]
 
         # Scale keypoints to output size.
-        sx = self.output_size[0] / orig_w
-        sy = self.output_size[1] / orig_h
+        sx = out_w / orig_w
+        sy = out_h / orig_h
 
-        keypoints = keypoints.copy()
         keypoints[:, 0] *= sx
         keypoints[:, 1] *= sy
 
@@ -125,4 +126,7 @@ class AtlasDataset(BaseDataset):
             "heatmaps": heatmaps,
             "filename": self.images[idx],
             "norm_coefficient": self.norm_coefficient,
+            "orig_height": img_size[0], 
+            "orig_width": img_size[1],
+            "orig_size": img_size
         }

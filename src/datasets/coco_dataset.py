@@ -126,8 +126,8 @@ class COCODataset(BaseDataset):
             keypoints = transformed["keypoints"]
 
          # Scale keypoints to output size.
-        sx = self.output_size[0] / orig_w
-        sy = self.output_size[1] / orig_h
+        sx = self.output_size[1] / orig_w
+        sy = self.output_size[0] / orig_h
 
         keypoints = self.keypoints[idx].copy()
         keypoints[:, 0] *= sx
