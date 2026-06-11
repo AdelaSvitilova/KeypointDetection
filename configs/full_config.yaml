@@ -1,0 +1,201 @@
+# Basic configuration, can be overwritten by other files
+
+experiment:
+  name: EXP_HRNet_optuna_small  # Experiment identifier
+  continue_from: null  # Checkpoint to resume from; null means train from scratch (e.g., epoch_10.pt or best.pt)
+  seed: 42
+  optuna: True
+  optuna_trials: 100
+
+train:
+  batch_size: 8  # Training batch size
+  lr: 0.005  # Initial learning rate
+  epochs: 58  # Total number of training epochs
+  save_every_epoch: 100  # Save model every N epochs; use 1 to save every epoch
+  device: null  # Device to use; null for auto (e.g., "cuda:4")
+  use_tensorboard: False  # Whether to log metrics to TensorBoard
+
+model:
+  name: HRNet_pytorch  # Model architecture name
+  backend: pytorch  # Framework backend (e.g., 'pytorch')
+  special_mode: null  # Custom processing mode (removes 5th dimension)
+  params:
+    input_channels: 3  # RGB input channels
+    num_keypoints: 23  # Number of keypoints to predict
+    
+    init_weights: True
+    final_conv_kernel: 1
+    stage2:
+      num_modules: 1
+      num_branches: 2
+      block: BASIC
+      num_blocks: [4, 4]
+      num_channels: [32, 64]
+      fuse_method: SUM
+    stage3:
+      num_modules: 4
+      num_branches: 3
+      block: BASIC
+      num_blocks: [4, 4, 4]
+      num_channels: [32, 64, 128]
+      fuse_method: SUM
+    stage4:
+      num_modules: 3
+      num_branches: 4
+      block: BASIC
+      num_blocks: [4, 4, 4, 4]
+      num_channels: [32, 64, 128, 256]
+      fuse_method: SUM
+
+    pretrained:  "" #"results/pose_hrnet_w32_256x192.pth"
+    pretrained_layers: [conv1, bn1, conv2, bn2, layer1, transition1, stage2, transition2, stage3, transition3, stage4]
+
+
+keypoint_format: heatmaps  # Output format: 'heatmaps'
+
+loss:
+  name: Weighted  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
+  params:
+    losses: ["MSE", "AED"]  # List of loss functions to combine
+    weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
+
+metrics:
+  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
+
+dataset:
+  params:
+    input_size:
+      - 256  # Input height
+      - 256  # Input width
+    output_size:
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
+
+train:
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
+  CosineAnnealingLR:
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
+  CosineAnnealingWarmRestarts:
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate
+
+dataset:
+  name: atlas  # Dataset identifier (e.g., 'atlas')
+  train: "train_atlas_vertebra_fold_0.csv"  # Training split file; uncomment for fold-specific: "train_atlas_vertebra_fold_0.csv"
+  train_num_samples: 10  # Override training sample count; null uses full dataset
+  val: "val_atlas_vertebra_fold_0.csv"  # Validation split file; uncomment for fold-specific: "val_atlas_vertebra_fold_0.csv"
+  val_num_samples: 2  # Override validation sample count; null uses full dataset
+  params:
+    root_dir: "./data/atlas"  # Base directory for dataset files
+    num_keypoints: 23  # Number of keypoints per annotation
+    annotation_file: pose_dataset.csv  # File containing keypoint annotations
+    norm_coefficient: 10  # Normalization factor for metrics like PCK (scales to object size)
+  augmentation:
+    flip:
+      use: True
+      probability: 0.5
+
+    clahe:
+      use: True
+      clip_min: 2
+      clip_max: 3
+      tile_grid_min: 8
+      tile_grid_max: 8
+      probability: 0.5
+
+    brightness:
+      use: True
+      brightness_min: -0.2
+      brightness_max: 0.1
+      contrast_min: -0.2
+      contrast_max: 0.2
+      probability: 0.5
+
+    rotate:
+      use: True 
+      min: -7
+      max: 7
+      probability: 0.5
+
+    translate:
+      use: True
+      translate_percent_from: -0.05
+      translate_percent_to: 0.05
+      probability: 0.5
+
+optuna: 
+  train.scheduler:
+    type: cat
+    choices: [CosineAnnealingLR, CosineAnnealingWarmRestarts]
+
+  train.lr:
+    type: float
+    low: 0.0005
+    high: 0.01
+
+  train.batch_size:
+    type: cat
+    choices: [16, 32, 64, 128]
+
+  loss.params.losses:
+    type: list 
+    choices1:  [multi_MSE, multi_L2Norm, multi_Huber]
+    choices2:  [multi_AED, multi_KLDiv]
+  loss.params.weights:
+    type: weights 
+    low: 0
+    high: 1
+
+  dataset.augmentation.flip.use:
+    type: cat
+    choices: [True, False]
+
+  dataset.augmentation.clahe.use:
+    type: cat
+    choices: [True, False]
+
+  dataset.augmentation.brightness.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.brightness.brightness_min:
+    type: float
+    low: -0.3
+    high: -0.05
+  dataset.augmentation.brightness.brightness_max:
+    type: float
+    low: 0.05
+    high: 0.3
+  dataset.augmentation.brightness.contrast_min:
+    type: float
+    low: -0.3
+    high: -0.05
+  dataset.augmentation.brightness.contrast_max:
+    type: float
+    low: 0.05
+    high: 0.3
+
+  dataset.augmentation.rotate.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.rotate.min:
+    type: int
+    low: -10
+    high: -3
+  dataset.augmentation.rotate.max:
+    type: int
+    low: 3
+    high: 10
+
+  dataset.augmentation.translate.use:
+    type: cat
+    choices: [True, False]
+  dataset.augmentation.translate.translate_percent_from:
+    type: float
+    low: -0.09
+    high: -0.02
+  dataset.augmentation.translate.translate_percent_to:
+    type: float
+    low: 0.02
+    high: 0.09
