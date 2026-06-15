@@ -18,7 +18,7 @@ def merge_configs(base_cfg, override_cfg):
     for key, val in override_cfg.items():
         # If both values are dictionaries, merge recursively
         if key in base_cfg and isinstance(base_cfg[key], dict) and isinstance(val, dict):
-            merge_configs(base_cfg[key], val)
+            base_cfg[key] = merge_configs(base_cfg[key], val)
         else:
             # Otherwise, override the value
             base_cfg[key] = val

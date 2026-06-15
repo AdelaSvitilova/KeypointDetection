@@ -8,12 +8,20 @@ experiment:
   optuna_trials: 100
 
 train:
-  batch_size: 8  # Training batch size
-  lr: 0.005  # Initial learning rate
+  batch_size: 8 # Training batch size
+  lr: 0.005 # Initial learning rate
   epochs: 58  # Total number of training epochs
   save_every_epoch: 100  # Save model every N epochs; use 1 to save every epoch
   device: null  # Device to use; null for auto (e.g., "cuda:4")
   use_tensorboard: False  # Whether to log metrics to TensorBoard
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
+  CosineAnnealingLR:
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
+  CosineAnnealingWarmRestarts:
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate
 
 model:
   name: HRNet_pytorch  # Model architecture name
@@ -50,7 +58,6 @@ model:
     pretrained:  "" #"results/pose_hrnet_w32_256x192.pth"
     pretrained_layers: [conv1, bn1, conv2, bn2, layer1, transition1, stage2, transition2, stage3, transition3, stage4]
 
-
 keypoint_format: heatmaps  # Output format: 'heatmaps'
 
 loss:
@@ -63,25 +70,6 @@ metrics:
   names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
 
 dataset:
-  params:
-    input_size:
-      - 256  # Input height
-      - 256  # Input width
-    output_size:
-      - 64  # Output heatmap height
-      - 64  # Output heatmap width
-
-train:
-  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
-  CosineAnnealingLR:
-    T_max: 50  # Period for cosine annealing
-    eta_min: 1e-6  # Minimum learning rate
-  CosineAnnealingWarmRestarts:
-    T_0: 4  # Initial period length
-    T_mult: 2  # Period multiplier per restart
-    eta_min: 1e-8  # Minimum learning rate
-
-dataset:
   name: atlas  # Dataset identifier (e.g., 'atlas')
   train: "train_atlas_vertebra_fold_0.csv"  # Training split file; uncomment for fold-specific: "train_atlas_vertebra_fold_0.csv"
   train_num_samples: null  # Override training sample count; null uses full dataset
@@ -92,6 +80,12 @@ dataset:
     num_keypoints: 23  # Number of keypoints per annotation
     annotation_file: pose_dataset.csv  # File containing keypoint annotations
     norm_coefficient: 10  # Normalization factor for metrics like PCK (scales to object size)
+    input_size:
+      - 256  # Input height
+      - 256  # Input width
+    output_size:
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
   augmentation:
     flip:
       use: True
@@ -141,8 +135,8 @@ optuna:
 
   loss.params.losses:
     type: list 
-    choices1:  [multi_MSE, multi_L2Norm, multi_Huber]
-    choices2:  [multi_AED, multi_KLDiv]
+    choices1:  [MSE, L2Norm, Huber]
+    choices2:  [AED, KLDiv]
   loss.params.weights:
     type: weights 
     low: 0
