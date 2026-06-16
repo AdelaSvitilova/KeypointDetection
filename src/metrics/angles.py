@@ -8,8 +8,8 @@ class CobbAngle(BaseMetric):
         self.total_points = 0
 
     def _compute_cobb(self, p1, p2, q1, q2):
-        v1 = np.array([p2[0] - p1[0], p2[1] - p1[1]], dtype=float)
-        v2 = np.array([q2[0] - q1[0], q2[1] - q1[1]], dtype=float)
+        v1 = np.stack([p2[:, 0] - p1[:, 0], p2[:, 1] - p1[:, 1]], axis=1)
+        v2 = np.stack([q2[:, 0] - q1[:, 0], q2[:, 1] - q1[:, 1]], axis=1)
         dot = np.sum(v1 * v2, axis=1)
         det = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0] 
         return np.degrees(np.atan2(det, dot))
@@ -20,6 +20,8 @@ class CobbAngle(BaseMetric):
         preds_keypoints = heatmaps_to_keypoints(preds)
         keypoints_preds = scale_keypoints(preds_keypoints, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
         keypoints_targets = scale_keypoints(targets, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
+
+        print(keypoints_preds[:, c2_bl, :])
 
         cobb_preds = self._compute_cobb(
             keypoints_preds[:, c2_bl, :], 
@@ -38,8 +40,6 @@ class CobbAngle(BaseMetric):
 
         self.error_sum += np.mean(error)
         self.total_points +=1
-
-        print(self.error_sum)
         
 
     def compute(self):

@@ -1,7 +1,7 @@
 dataset:
   name: atlas  # Dataset identifier (e.g., 'atlas')
   train: "train.csv"  # Training split file; uncomment for fold-specific: "train_atlas_vertebra_fold_0.csv"
-  train_num_samples: 10  # Override training sample count; null uses full dataset
+  train_num_samples: 9  # Override training sample count; null uses full dataset
   val: "val.csv"  # Validation split file; uncomment for fold-specific: "val_atlas_vertebra_fold_0.csv"
   val_num_samples: 2  # Override validation sample count; null uses full dataset
   params:

@@ -12,5 +12,5 @@ configs:
 
   # - configs/optimizer/optuna.yaml
 
-  - configs/full_config.yaml
+  # - configs/full_config.yaml
   
