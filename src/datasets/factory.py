@@ -6,10 +6,10 @@ from .transforms.keypoints_to_heatmaps import keypoints_to_heatmaps_np
 
 
 def get_dataset(
-    name: str,
-    load: str | None = None,
-    num_samples: int | None = None,
-    keypoint_format: str | None = None,
+    name,
+    load=None,
+    num_samples=None,
+    keypoint_format=None,
     **kwargs,
 ):
     """Factory function for creating dataset instances.

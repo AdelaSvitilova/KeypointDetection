@@ -285,9 +285,22 @@ class PytorchTrainer(BaseTrainer):
 
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
-    def predict_image(self, data_loader, checkpoint="best.pt"): 
+
+    def predict(self, data_loader, method=None, checkpoint="best.pt", batch_size=1, create_data_loader=False): 
         self.load_model_from_checkpoint(checkpoint)
         
+        if create_data_loader:
+            data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+
+        if method == "sliding_window":
+            yield from self._sliding_window_predict(data_loader)
+        else:
+            yield from self._predict(data_loader)
+
+
+    def _predict(self, data_loader):
+        print("predict")
+
         self.model.eval()
         with torch.no_grad():
             for item in data_loader:
@@ -295,22 +308,69 @@ class PytorchTrainer(BaseTrainer):
                 images = images.to(self.device)
                 preds = self.model(images)
                 if self.special_mode == "cut_five_dim" and preds.ndim == 5:
-                    # (B, 2, K, H, W) → (B, K, H, W)
                     preds = preds[:, -1, :, :, :]
                 yield item, preds.cpu().numpy()
 
-    def predict(self, data_loader, checkpoint="best.pt", batch_size=1): 
-        self.load_model_from_checkpoint(checkpoint)
-        data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
+    def _create_gaussian_window(self, window_size=[256,256], sigma_scale=0.25):
+        sigma = window_size * sigma_scale
+        coords = torch.arange(window_size, dtype=torch.float32) - (window_size - 1) / 2.0
+        grid_x, grid_y = torch.meshgrid(coords, coords, indexing='ij')
+        gaussian_2d = torch.exp(-(grid_x**2 + grid_y**2) / (2 * sigma**2))
         
+        return gaussian_2d / gaussian_2d.max()
+
+    def _sliding_window_predict(self, data_loader, patch_size=64, stride=32, sigma_scale=0.25):
+        print("Sliding_window")
+    
         self.model.eval()
+    
         with torch.no_grad():
             for item in data_loader:
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
-                images = images.to(self.device)
-                preds = self.model(images)
+                B, C, H, W = images.shape
+                
+                patches = F.unfold(images, kernel_size=patch_size, stride=stride)
+                _, _, L = patches.shape
+                
+                patches_for_model = patches.transpose(1, 2).view(B * L, C, patch_size, patch_size)
+                
+                preds = self.model(patches_for_model)
                 if self.special_mode == "cut_five_dim" and preds.ndim == 5:
-                    # (B, 2, K, H, W) → (B, K, H, W)
                     preds = preds[:, -1, :, :, :]
-                yield item, preds.cpu().numpy()
+                
+                num_keypoints = preds.shape[1]
+                pred_patch_H = preds.shape[2] 
+                pred_patch_W = preds.shape[3]
+                
+                scale_factor = pred_patch_H / patch_size
+                
+                out_patch_size = pred_patch_H             
+                out_stride = int(stride * scale_factor)   
+                out_H = int(H * scale_factor)             
+                out_W = int(W * scale_factor)
+                
+                gauss_window = create_gaussian_window(out_patch_size, sigma_scale).to(self.device)
+                gauss_window = gauss_window.unsqueeze(0).unsqueeze(0)  
+                
+                weighted_preds = preds * gauss_window
+                
+                weighted_flat = weighted_preds.view(B, L, num_keypoints * out_patch_size * out_patch_size).transpose(1, 2)
+                reconstructed_heatmaps = F.fold(
+                    weighted_flat, 
+                    output_size=(out_H, out_W), 
+                    kernel_size=out_patch_size, 
+                    stride=out_stride
+                )
+                
+                window_unfolded = gauss_window.view(1, 1 * out_patch_size * out_patch_size, 1).expand(B, 1 * out_patch_size * out_patch_size, L)
+                weight_map = F.fold(
+                    window_unfolded, 
+                    output_size=(out_H, out_W), 
+                    kernel_size=out_patch_size, 
+                    stride=out_stride
+                )
+                
+                final_heatmaps = reconstructed_heatmaps / (weight_map + 1e-8)
+                
+                yield item, final_heatmaps.cpu().numpy()
 

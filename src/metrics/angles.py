@@ -21,8 +21,6 @@ class CobbAngle(BaseMetric):
         keypoints_preds = scale_keypoints(preds_keypoints, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
         keypoints_targets = scale_keypoints(targets, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
 
-        print(keypoints_preds[:, c2_bl, :])
-
         cobb_preds = self._compute_cobb(
             keypoints_preds[:, c2_bl, :], 
             keypoints_preds[:, c2_br, :], 

@@ -115,7 +115,7 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
    results = []
 
    # === Prediction loop ===
-   for batch, preds in trainer.predict_image(loader, checkpoint=cfg["predict"]["model"]):
+   for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"]):
       for img, pred, fname, keypoints in zip(
          batch["image"], preds, batch["filename"], batch["keypoints"]
       ):
@@ -200,7 +200,7 @@ def select_images(cfg, folder_path):
 def make_dataset_of_prediction(cfg, trainer, dataset, annotations_label):
    records = []
 
-   for item, heatmaps_np in trainer.predict(dataset, checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"]):
+   for item, heatmaps_np in trainer.predict(dataset, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"], create_data_loader=True):
       preds_np = heatmaps_np
       filenames = item["filename"]
       annotations = item["keypoints"]
@@ -571,7 +571,11 @@ def main():
    print(f"Model '{cfg['model']['name']}' created.")
 
    # Load dataset
-   transform = get_transform(None, cfg["keypoint_format"], cfg["predict"]["params"]["input_size"])
+   transform = get_transform(
+      transform=None, 
+      format=cfg["keypoint_format"], 
+      **cfg["dataset"]["params"]
+   )
 
    dataset = get_dataset(
       name=cfg["predict"]["name"],
@@ -579,12 +583,12 @@ def main():
       num_samples=cfg["predict"]["num_samples"],
       keypoint_format=cfg["keypoint_format"],
       transform=transform,
-      **cfg["predict"]["params"]
+      **cfg["dataset"]["params"]
    )
    print(f"Dataset loaded: {len(dataset)} images.")
 
    # Load annotation labels from text file
-   txt_path = os.path.join(cfg["predict"]["params"]["root_dir"],
+   txt_path = os.path.join(cfg["dataset"]["params"]["root_dir"],
                            cfg["predict"]["annotation_label"])
    annotations_label = []
    with open(txt_path, "r") as f:

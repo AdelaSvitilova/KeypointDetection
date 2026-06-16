@@ -2,16 +2,17 @@ model:
   name: stacked_hourglass_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
   special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
+  predict_type: "sliding_window"
   params:
     input_channels: 3  # RGB input channels
     num_keypoints: 23  # Number of keypoints to predict (otput dimension)
-    nstack: 2  # Number of stacked hourglass networks
+    nstack: 5  # Number of stacked hourglass networks
     inp_dim: 256  # Input feature dimension
 
 keypoint_format: heatmaps  # Output format: 'heatmaps'
 
 loss:
-  name: Weighted  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted
+  name: multi_Huber  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted
   params:
     losses: ["multi_MSE", "multi_AED"]  # List of loss functions to combine
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
@@ -23,10 +24,13 @@ dataset:
   params:
     input_size:
       - 256  # Input height
-      - 192  # Input width
+      - 256  # Input width
     output_size:
       - 64  # Output heatmap height
-      - 48  # Output heatmap width
+      - 64  # Output heatmap width
+    window_size:
+      - 256 
+      - 256 
 
 train:
   scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts

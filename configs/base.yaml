@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: EXP_Metrics #EXP_augm  # Experiment identifier
+  name: exp_sliding_window #EXP_augm  # Experiment identifier
   continue_from: null  # Checkpoint to resume from; null means train from scratch (e.g., epoch_10.pt or best.pt)
   seed: 42
   optuna: False
@@ -10,7 +10,7 @@ experiment:
 train:
   batch_size: 8  # Training batch size
   lr: 0.005  # Initial learning rate
-  epochs: 1  # Total number of training epochs
-  save_every_epoch: 100  # Save model every N epochs; use 1 to save every epoch
+  epochs: 20  # Total number of training epochs
+  save_every_epoch: 20  # Save model every N epochs; use 1 to save every epoch
   device: null  # Device to use; null for auto (e.g., "cuda:4")
   use_tensorboard: False  # Whether to log metrics to TensorBoard
