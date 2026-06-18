@@ -9,8 +9,6 @@ import time
 import math
 import optuna
 
-from monai.inferers import SlidingWindowInferer
-
 class PytorchTrainer(BaseTrainer):
     def __init__(
         self,
