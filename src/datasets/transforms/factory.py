@@ -33,7 +33,7 @@ def get_transform(
 
     transforms_list = []
 
-    if predict_type == "sliding_window":
+    if predict_type == "sliding_window" or predict_type == "sliding_window_val":
         pass
     else:
         transforms_list.append(resize(input_size))

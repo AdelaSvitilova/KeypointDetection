@@ -6,7 +6,10 @@ from .base_trainer import BaseTrainer
 from .utils import collate_fn
 from pathlib import Path
 import time
+import math
 import optuna
+
+from monai.inferers import SlidingWindowInferer
 
 class PytorchTrainer(BaseTrainer):
     def __init__(
@@ -319,58 +322,88 @@ class PytorchTrainer(BaseTrainer):
         
         return gaussian_2d / gaussian_2d.max()
 
-    def _sliding_window_predict(self, data_loader, patch_size=64, stride=32, sigma_scale=0.25):
-        print("Sliding_window")
-    
+    def _sliding_window_predict(
+        self, 
+        data_loader, 
+        patch_size=256, 
+        stride=128, 
+        sigma_scale=0.25, 
+        min_peak_threshold=0.05,  # Prahování pro prázdná okna (0 = vypnuto)
+    ):
         self.model.eval()
-    
+        
         with torch.no_grad():
             for item in data_loader:
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
                 B, C, H, W = images.shape
                 
-                patches = F.unfold(images, kernel_size=patch_size, stride=stride)
+                # 1. Dynamický padding pro libovolné rozměry vstupu
+                if H < patch_size:
+                    pad_H = patch_size - H
+                    num_patches_H = 1
+                else:
+                    num_patches_H = math.ceil((H - patch_size) / stride) + 1
+                    pad_H = (num_patches_H - 1) * stride + patch_size - H
+                    
+                if W < patch_size:
+                    pad_W = patch_size - W
+                    num_patches_W = 1
+                else:
+                    num_patches_W = math.ceil((W - patch_size) / stride) + 1
+                    pad_W = (num_patches_W - 1) * stride + patch_size - W
+                
+                padded_images = F.pad(images, (0, pad_W, 0, pad_H), mode='constant', value=0)
+                H_pad, W_pad = padded_images.shape[2], padded_images.shape[3]
+                
+                # 2. Extrakce patchů (Unfold)
+                patches = F.unfold(padded_images, kernel_size=patch_size, stride=stride)
                 _, _, L = patches.shape
+                patches_for_model = patches.transpose(1, 2).reshape(B * L, C, patch_size, patch_size)
                 
-                patches_for_model = patches.transpose(1, 2).view(B * L, C, patch_size, patch_size)
-                
+                # 3. Predikce modelu nad patchemi
                 preds = self.model(patches_for_model)
+                
+                # Ošetření 5D výstupu
                 if self.special_mode == "cut_five_dim" and preds.ndim == 5:
                     preds = preds[:, -1, :, :, :]
                 
                 num_keypoints = preds.shape[1]
-                pred_patch_H = preds.shape[2] 
-                pred_patch_W = preds.shape[3]
+                out_patch_size = preds.shape[2]
                 
-                scale_factor = pred_patch_H / patch_size
-                
-                out_patch_size = pred_patch_H             
-                out_stride = int(stride * scale_factor)   
-                out_H = int(H * scale_factor)             
+                # 4. Výpočet měřítka (scale factor) pro F.fold
+                scale_factor = float(out_patch_size) / float(patch_size)
+                out_stride = int(stride * scale_factor)
+                out_H_pad = int(H_pad * scale_factor)
+                out_W_pad = int(W_pad * scale_factor)
+                out_H = int(H * scale_factor)
                 out_W = int(W * scale_factor)
                 
-                gauss_window = create_gaussian_window(out_patch_size, sigma_scale).to(self.device)
-                gauss_window = gauss_window.unsqueeze(0).unsqueeze(0)  
+                # --- 5. ČISTÉ SLOŽENÍ POMOCÍ F.FOLD ---
+                # Přeskupení predikcí pro F.fold: [B, num_keypoints * patch_area, L]
+                preds_flat = preds.view(B, L, num_keypoints * out_patch_size * out_patch_size).transpose(1, 2)
                 
-                weighted_preds = preds * gauss_window
-                
-                weighted_flat = weighted_preds.view(B, L, num_keypoints * out_patch_size * out_patch_size).transpose(1, 2)
-                reconstructed_heatmaps = F.fold(
-                    weighted_flat, 
-                    output_size=(out_H, out_W), 
+                # F.fold sečte překrývající se oblasti
+                reconstructed_sum = F.fold(
+                    preds_flat, 
+                    output_size=(out_H_pad, out_W_pad), 
                     kernel_size=out_patch_size, 
                     stride=out_stride
                 )
                 
-                window_unfolded = gauss_window.view(1, 1 * out_patch_size * out_patch_size, 1).expand(B, 1 * out_patch_size * out_patch_size, L)
-                weight_map = F.fold(
-                    window_unfolded, 
-                    output_size=(out_H, out_W), 
+                # Vytvoření mapy překryvů (kolik patchů se překrývá na každém pixelu)
+                ones = torch.ones(B, 1 * out_patch_size * out_patch_size, L, device=self.device)
+                overlap_map = F.fold(
+                    ones, 
+                    output_size=(out_H_pad, out_W_pad), 
                     kernel_size=out_patch_size, 
                     stride=out_stride
                 )
                 
-                final_heatmaps = reconstructed_heatmaps / (weight_map + 1e-8)
+                # Průměrování (dělení součtu počtem překryvů) a ochrana proti dělení nulou
+                safe_overlap_map = torch.where(overlap_map > 0, overlap_map, torch.ones_like(overlap_map))
+                final_heatmaps = reconstructed_sum / safe_overlap_map
                 
+                # 6. Oříznutí výplně (odstraníme padding, vrátíme původní cílové rozlišení)
+                final_heatmaps = final_heatmaps[:, :, :out_H, :out_W]
+                                
                 yield item, final_heatmaps.cpu().numpy()
-

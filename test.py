@@ -7,6 +7,7 @@ import csv
 
 from src.utils.config import load_config
 from src.models.factory import get_model
+from src.datasets.transforms.factory import get_transform
 from src.datasets.factory import get_dataset
 from src.metrics.factory import get_metrics
 from src.train.factory import get_trainer
@@ -201,17 +202,25 @@ def main():
     print(f"Model '{cfg['model']['name']}' created.")
 
     # Load dataset
+    transform = get_transform(
+        transform=None, 
+        format=cfg["keypoint_format"], 
+        #predict_type=cfg["model"]["predict_type"], # remove
+        **cfg["dataset"]["params"]
+    )
+
     dataset = get_dataset(
         name=cfg["predict"]["name"],
         load=cfg["predict"]["images_list"],
         num_samples=cfg["predict"]["num_samples"],
         keypoint_format=cfg["keypoint_format"],
-        **cfg["predict"]["params"]
+        transform=None,
+        **cfg["dataset"]["params"]
     )
     print(f"Dataset loaded: {len(dataset)} images.")
 
     # Load annotation labels from text file
-    txt_path = os.path.join(cfg["predict"]["params"]["root_dir"],
+    txt_path = os.path.join(cfg["dataset"]["params"]["root_dir"],
                             cfg["predict"]["annotation_label"])
     annotations_label = []
     with open(txt_path, "r") as f:
@@ -249,7 +258,7 @@ def main():
     results = []
 
     # === Prediction loop ===
-    for batch, preds in trainer.predict_image(loader, checkpoint=cfg["predict"]["model"]):
+    for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"]):
         for img, pred, fname, keypoints in zip(
             batch["image"], preds, batch["filename"], batch["keypoints"]
         ):
