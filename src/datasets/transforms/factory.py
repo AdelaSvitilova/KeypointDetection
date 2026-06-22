@@ -1,8 +1,8 @@
-from .basic_transform import random_rotate, random_brightness, flip, clahe, resize, affine
+from .basic_transform import random_rotate, random_brightness, flip, clahe, resize, affine, random_crop
 import albumentations as A
 
 def get_transform(
-    transform, format, input_size
+    transform, format, input_size, window_size, predict_type=None, **kwargs
 ):
     """Composes a list of Albumentations transforms based on configuration.
 
@@ -33,8 +33,10 @@ def get_transform(
 
     transforms_list = []
 
-    # Always apply resize as the baseline transform
-    transforms_list.append(resize(input_size))
+    if predict_type == "sliding_window" or predict_type == "sliding_window_val":
+        pass
+    else:
+        transforms_list.append(resize(input_size))
     
     if transform:
         for name, params in transform.items():
@@ -46,16 +48,18 @@ def get_transform(
                 transform_class = transforms[name]
                 transforms_list.append(transform_class(**params))
 
+    if predict_type == "sliding_window":
+        transforms_list.append(random_crop(window_size))
+
     compose_kwargs = {}
 
-    # Configure keypoint parameters specifically for heatmap generation
-    if format == "heatmaps":
-        compose_kwargs["keypoint_params"] = (
-            A.KeypointParams(
-                format="xy",
-                remove_invisible=False,
-            )
+    
+    compose_kwargs["keypoint_params"] = (
+        A.KeypointParams(
+            format="xy",
+            remove_invisible=False,
         )
+    )
 
     return A.Compose(
         transforms_list,

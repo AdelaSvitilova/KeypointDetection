@@ -51,7 +51,12 @@ def train_model(cfg, trial):
     # === Dataset loading ===
 
     # Training dataset
-    transform = get_transform(cfg["dataset"]["augmentation"], cfg["keypoint_format"], cfg["dataset"]["params"]["input_size"])
+    transform = get_transform(
+        transform=cfg["dataset"]["augmentation"], 
+        format=cfg["keypoint_format"], 
+        predict_type=cfg["model"]["predict_type"],
+        **cfg["dataset"]["params"]
+    )
 
     train_dataset = get_dataset(
         name=cfg["dataset"]["name"],
@@ -64,7 +69,12 @@ def train_model(cfg, trial):
     print(f"Training dataset loaded ({len(train_dataset)} samples).")
 
     # Validation dataset
-    transform = get_transform(None, cfg["keypoint_format"], cfg["dataset"]["params"]["input_size"])
+    transform = get_transform(
+        transform=None, 
+        format=cfg["keypoint_format"], 
+        predict_type=cfg["model"]["predict_type"], 
+        **cfg["dataset"]["params"]
+    )
 
     val_dataset = get_dataset(
         name=cfg["dataset"]["name"],

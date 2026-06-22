@@ -24,6 +24,7 @@ class AtlasDataset(BaseDataset):
         output_size=(64, 64),
         annotation_file="pose_dataset.csv",
         norm_coefficient=25,
+        **kwargs
     ):
         """
         Args:
@@ -113,7 +114,7 @@ class AtlasDataset(BaseDataset):
         keypoints[:, 1] *= sy
 
         # Convert to CHW.
-        image = image / 255.0
+        image = (image / 255.0).astype(np.float32)
         image = image.transpose(2, 0, 1)
 
         heatmaps = None
@@ -128,5 +129,5 @@ class AtlasDataset(BaseDataset):
             "norm_coefficient": self.norm_coefficient,
             "orig_height": img_size[0], 
             "orig_width": img_size[1],
-            "orig_size": img_size
+            #"orig_size": img_size
         }

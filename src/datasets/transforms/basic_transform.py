@@ -128,3 +128,16 @@ def clahe(clip_min, clip_max, tile_grid_min, tile_grid_max, probability, **kwarg
         tile_grid_size=(tile_grid_min, tile_grid_max),
         p=probability,
     )
+
+def random_crop(crop_size, **kwargs):
+    """
+    Creates a random crop augmentation.
+
+    Args:
+        crop_size (tuple): Target size as (height, width).
+        **kwargs: Additional unused keyword arguments for API compatibility.
+
+    Returns:
+        A.RandomCrop: Albumentations random crop transform.
+    """
+    return A.RandomCrop(height=crop_size[0], width=crop_size[1], p=1.0)

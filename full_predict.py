@@ -82,14 +82,14 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
 
    fig, ax = plt.subplots(figsize=(6, 6))
    ax.imshow(image)
-   # ax.imshow(combined, cmap="turbo", alpha=0.4)
+   ax.imshow(combined, cmap="turbo", alpha=0.4)
 
    if show_points:
       # Mark maxima of each heatmap
-      # for hm in heatmaps:
-      #    hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
-      #    y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
-      #    ax.scatter(x, y, c="red", s=6, label="Prediction")
+      for hm in heatmaps:
+         hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
+         y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
+         ax.scatter(x, y, c="red", s=6, label="Prediction")
 
       # Overlay keypoints if provided
       if keypoints is not None:
@@ -100,9 +100,9 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
                ax.scatter(kp_set[:, 0], kp_set[:, 1], c="green", s=6, marker="x",
                         label="Anotation" if i == 0 else None)
 
-   # handles, labels = ax.get_legend_handles_labels()
-   # by_label = dict(zip(labels, handles))
-   # ax.legend(by_label.values(), by_label.keys())
+   handles, labels = ax.get_legend_handles_labels()
+   by_label = dict(zip(labels, handles))
+   ax.legend(by_label.values(), by_label.keys())
 
    ax.axis("off")
    os.makedirs(path_to_save, exist_ok=True)
@@ -115,7 +115,7 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
    results = []
 
    # === Prediction loop ===
-   for batch, preds in trainer.predict_image(loader, checkpoint=cfg["predict"]["model"]):
+   for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], **cfg["dataset"]["params"]):
       for img, pred, fname, keypoints in zip(
          batch["image"], preds, batch["filename"], batch["keypoints"]
       ):
@@ -200,7 +200,7 @@ def select_images(cfg, folder_path):
 def make_dataset_of_prediction(cfg, trainer, dataset, annotations_label):
    records = []
 
-   for item, heatmaps_np in trainer.predict(dataset, checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"]):
+   for item, heatmaps_np in trainer.predict(dataset, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"], create_data_loader=True, **cfg["dataset"]["params"]):
       preds_np = heatmaps_np
       filenames = item["filename"]
       annotations = item["keypoints"]
@@ -571,7 +571,12 @@ def main():
    print(f"Model '{cfg['model']['name']}' created.")
 
    # Load dataset
-   transform = get_transform(None, cfg["keypoint_format"], cfg["predict"]["params"]["input_size"])
+   transform = get_transform(
+      transform=None, 
+      format=cfg["keypoint_format"], 
+      predict_type=f"{cfg["model"]["predict_type"]}_val",
+      **cfg["dataset"]["params"]
+   )
 
    dataset = get_dataset(
       name=cfg["predict"]["name"],
@@ -579,12 +584,12 @@ def main():
       num_samples=cfg["predict"]["num_samples"],
       keypoint_format=cfg["keypoint_format"],
       transform=transform,
-      **cfg["predict"]["params"]
+      **cfg["dataset"]["params"]
    )
    print(f"Dataset loaded: {len(dataset)} images.")
 
    # Load annotation labels from text file
-   txt_path = os.path.join(cfg["predict"]["params"]["root_dir"],
+   txt_path = os.path.join(cfg["dataset"]["params"]["root_dir"],
                            cfg["predict"]["annotation_label"])
    annotations_label = []
    with open(txt_path, "r") as f:
