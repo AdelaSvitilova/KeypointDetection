@@ -31,6 +31,8 @@ dataset:
     window_size:
       - 256 
       - 256 
+    window_stride:
+      - 128
 
 train:
   scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts

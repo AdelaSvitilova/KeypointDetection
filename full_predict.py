@@ -115,7 +115,7 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
    results = []
 
    # === Prediction loop ===
-   for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"]):
+   for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], **cfg["dataset"]["params"]):
       for img, pred, fname, keypoints in zip(
          batch["image"], preds, batch["filename"], batch["keypoints"]
       ):
@@ -200,7 +200,7 @@ def select_images(cfg, folder_path):
 def make_dataset_of_prediction(cfg, trainer, dataset, annotations_label):
    records = []
 
-   for item, heatmaps_np in trainer.predict(dataset, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"], create_data_loader=True):
+   for item, heatmaps_np in trainer.predict(dataset, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], batch_size=cfg["predict"]["batch_size"], create_data_loader=True, **cfg["dataset"]["params"]):
       preds_np = heatmaps_np
       filenames = item["filename"]
       annotations = item["keypoints"]

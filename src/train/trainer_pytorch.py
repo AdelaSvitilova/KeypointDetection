@@ -287,14 +287,25 @@ class PytorchTrainer(BaseTrainer):
         self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
 
-    def predict(self, data_loader, method=None, checkpoint="best.pt", batch_size=1, create_data_loader=False): 
+    def predict(
+        self, 
+        data_loader, 
+        method=None,
+        checkpoint="best.pt", 
+        batch_size=1, 
+        create_data_loader=False, 
+        window_size=256, 
+        window_stride=128, 
+        sigma_scale=0.25,
+        **kwargs
+    ): 
         self.load_model_from_checkpoint(checkpoint)
         
         if create_data_loader:
             data_loader = DataLoader(data_loader, batch_size=batch_size, shuffle=False)
 
         if method == "sliding_window":
-            yield from self._sliding_window_predict(data_loader)
+            yield from self._sliding_window_predict(data_loader, window_size, window_stride, sigma_scale)
         else:
             yield from self._predict(data_loader)
 
@@ -312,7 +323,11 @@ class PytorchTrainer(BaseTrainer):
                     preds = preds[:, -1, :, :, :]
                 yield item, preds.cpu().numpy()
 
-    def _create_gaussian_window(self, window_size=[256,256], sigma_scale=0.25):
+    def _create_gaussian_window(self, window_size=256, sigma_scale=0.25):
+        # Pokud by window_size byl náhodou list/tuple, vezmeme první prvek
+        if isinstance(window_size, (list, tuple)):
+            window_size = window_size[0]
+            
         sigma = window_size * sigma_scale
         coords = torch.arange(window_size, dtype=torch.float32) - (window_size - 1) / 2.0
         grid_x, grid_y = torch.meshgrid(coords, coords, indexing='ij')
@@ -323,11 +338,19 @@ class PytorchTrainer(BaseTrainer):
     def _sliding_window_predict(
         self, 
         data_loader, 
-        patch_size=256, 
-        stride=128, 
+        window_size=256, 
+        window_stride=128, 
         sigma_scale=0.25, 
         min_peak_threshold=0.05,  # Prahování pro prázdná okna (0 = vypnuto)
     ):
+        if isinstance(window_size, (list, tuple)):
+            window_size = window_size[0]
+
+        if isinstance(window_stride, (list, tuple)):
+            window_stride = window_stride[0]
+
+        print(window_size, window_stride)
+
         self.model.eval()
         
         with torch.no_grad():
@@ -335,73 +358,76 @@ class PytorchTrainer(BaseTrainer):
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
                 B, C, H, W = images.shape
                 
-                # 1. Dynamický padding pro libovolné rozměry vstupu
-                if H < patch_size:
-                    pad_H = patch_size - H
+                if H < window_size:
+                    pad_H = window_size - H
                     num_patches_H = 1
                 else:
-                    num_patches_H = math.ceil((H - patch_size) / stride) + 1
-                    pad_H = (num_patches_H - 1) * stride + patch_size - H
+                    num_patches_H = math.ceil((H - window_size) / window_stride) + 1
+                    pad_H = (num_patches_H - 1) * window_stride + window_size - H
                     
-                if W < patch_size:
-                    pad_W = patch_size - W
+                if W < window_size:
+                    pad_W = window_size - W
                     num_patches_W = 1
                 else:
-                    num_patches_W = math.ceil((W - patch_size) / stride) + 1
-                    pad_W = (num_patches_W - 1) * stride + patch_size - W
+                    num_patches_W = math.ceil((W - window_size) / window_stride) + 1
+                    pad_W = (num_patches_W - 1) * window_stride + window_size - W
                 
                 padded_images = F.pad(images, (0, pad_W, 0, pad_H), mode='constant', value=0)
                 H_pad, W_pad = padded_images.shape[2], padded_images.shape[3]
                 
-                # 2. Extrakce patchů (Unfold)
-                patches = F.unfold(padded_images, kernel_size=patch_size, stride=stride)
+                patches = F.unfold(padded_images, kernel_size=window_size, stride=window_stride)
                 _, _, L = patches.shape
-                patches_for_model = patches.transpose(1, 2).reshape(B * L, C, patch_size, patch_size)
+                patches_for_model = patches.transpose(1, 2).reshape(B * L, C, window_size, window_size)
                 
-                # 3. Predikce modelu nad patchemi
                 preds = self.model(patches_for_model)
                 
-                # Ošetření 5D výstupu
                 if self.special_mode == "cut_five_dim" and preds.ndim == 5:
                     preds = preds[:, -1, :, :, :]
                 
                 num_keypoints = preds.shape[1]
-                out_patch_size = preds.shape[2]
+                out_window_size = preds.shape[2]
                 
-                # 4. Výpočet měřítka (scale factor) pro F.fold
-                scale_factor = float(out_patch_size) / float(patch_size)
-                out_stride = int(stride * scale_factor)
+                scale_factor = float(out_window_size) / float(window_size)
+                out_stride = int(window_stride * scale_factor)
                 out_H_pad = int(H_pad * scale_factor)
                 out_W_pad = int(W_pad * scale_factor)
                 out_H = int(H * scale_factor)
                 out_W = int(W * scale_factor)
                 
-                # --- 5. ČISTÉ SLOŽENÍ POMOCÍ F.FOLD ---
-                # Přeskupení predikcí pro F.fold: [B, num_keypoints * patch_area, L]
-                preds_flat = preds.view(B, L, num_keypoints * out_patch_size * out_patch_size).transpose(1, 2)
+                gaussian_window = self._create_gaussian_window(
+                    window_size=out_window_size, 
+                    sigma_scale=sigma_scale
+                ).to(self.device)
                 
-                # F.fold sečte překrývající se oblasti
+                gaussian_flat = gaussian_window.view(-1, 1)
+                
+                preds_reshaped = preds.view(B, L, num_keypoints, out_window_size * out_window_size)
+                
+                gauss_4d = gaussian_flat.view(1, 1, 1, -1)
+                
+                preds_weighted = preds_reshaped * gauss_4d
+                
+                preds_flat = preds_weighted.view(B, L, num_keypoints * out_window_size * out_window_size).transpose(1, 2)
+                
                 reconstructed_sum = F.fold(
                     preds_flat, 
                     output_size=(out_H_pad, out_W_pad), 
-                    kernel_size=out_patch_size, 
+                    kernel_size=out_window_size, 
                     stride=out_stride
                 )
                 
-                # Vytvoření mapy překryvů (kolik patchů se překrývá na každém pixelu)
-                ones = torch.ones(B, 1 * out_patch_size * out_patch_size, L, device=self.device)
-                overlap_map = F.fold(
-                    ones, 
+                gauss_map_src = gaussian_flat.view(1, -1, 1).expand(B, -1, L)
+                
+                overlap_weight_map = F.fold(
+                    gauss_map_src, 
                     output_size=(out_H_pad, out_W_pad), 
-                    kernel_size=out_patch_size, 
+                    kernel_size=out_window_size, 
                     stride=out_stride
                 )
                 
-                # Průměrování (dělení součtu počtem překryvů) a ochrana proti dělení nulou
-                safe_overlap_map = torch.where(overlap_map > 0, overlap_map, torch.ones_like(overlap_map))
-                final_heatmaps = reconstructed_sum / safe_overlap_map
+                safe_weight_map = torch.where(overlap_weight_map > 1e-6, overlap_weight_map, torch.ones_like(overlap_weight_map))
+                final_heatmaps = reconstructed_sum / safe_weight_map
                 
-                # 6. Oříznutí výplně (odstraníme padding, vrátíme původní cílové rozlišení)
                 final_heatmaps = final_heatmaps[:, :, :out_H, :out_W]
-                                
+                                        
                 yield item, final_heatmaps.cpu().numpy()
