@@ -349,8 +349,6 @@ class PytorchTrainer(BaseTrainer):
         if isinstance(window_stride, (list, tuple)):
             window_stride = window_stride[0]
 
-        print(window_size, window_stride)
-
         self.model.eval()
         
         with torch.no_grad():

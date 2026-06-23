@@ -116,8 +116,8 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
 
    # === Prediction loop ===
    for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], **cfg["dataset"]["params"]):
-      for img, pred, fname, keypoints in zip(
-         batch["image"], preds, batch["filename"], batch["keypoints"]
+      for img, pred, fname, keypoints, orig_height, orig_width in zip(
+         batch["image"], preds, batch["filename"], batch["keypoints"], batch["orig_height"], batch["orig_width"]
       ):
          # Visualize combined heatmap
          visualize_heatmaps_combined(img, pred, path_to_save, fname,
@@ -127,7 +127,7 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
          metrics_values = {}
          for m in metrics:
                m.reset()
-               m.update(np.expand_dims(pred, axis=0), np.expand_dims(keypoints, axis=0))
+               m.update(np.expand_dims(pred, axis=0), np.expand_dims(keypoints, axis=0), orig_height=orig_height, orig_width=orig_width)
                metrics_values[type(m).__name__] = m.compute()
 
          # Add filename to results
@@ -138,11 +138,10 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
    # Sort results by metric
    metrics = list(metrics_values.keys())
 
-   results_sorted = sorted(
-      results,
-      key=lambda x: (x[metrics[0]], -x[metrics[1]]),
-      reverse=True
-   )
+   for metric, direction in reversed(list(zip(metrics, cfg["predict"]["metrics_directions"]))):
+        is_reverse = (direction == '+')
+        
+        results.sort(key=lambda x: x[metric], reverse=is_reverse)
 
    # Save results to CSV
    csv_path = os.path.join(folder_path, f"{cfg["predict"]["prefix"]}_metrics_sorted.csv")
@@ -150,7 +149,7 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
       writer = csv.writer(f)
       header = ["filename"] + list(metrics_values.keys())
       writer.writerow(header)
-      for row in results_sorted:
+      for row in results:
          writer.writerow([row[h] for h in header])
 
    print(f"Results saved to {csv_path}")
@@ -204,11 +203,21 @@ def make_dataset_of_prediction(cfg, trainer, dataset, annotations_label):
       preds_np = heatmaps_np
       filenames = item["filename"]
       annotations = item["keypoints"]
+      orig_height = item["orig_height"]
+      orig_width = item["orig_width"]
 
       for batch_idx in range(preds_np.shape[0]):
          row = {"filename": filenames[batch_idx]}
+         row.update({
+            "orig_height": int(orig_height),
+            "orig_width": int(orig_width),
+         })
          for keypoint_idx in range(preds_np.shape[1]):
                heatmap = preds_np[batch_idx, keypoint_idx]
+               row.update({
+                  "predict_height": int(heatmap.shape[0]),
+                  "predict_width": int(heatmap.shape[1]),
+               })
                y_pred, x_pred = np.unravel_index(np.argmax(heatmap), heatmap.shape)
                x_ann, y_ann = annotations[batch_idx][keypoint_idx]
                label = annotations_label[keypoint_idx]
@@ -358,13 +367,18 @@ def analysis_metrics(cfg, df):
       preds[:, i, 0] = df[f"{kp}_pred_x"]
       preds[:, i, 1] = df[f"{kp}_pred_y"]
 
+   orig_height = df["orig_height"].tolist()
+   orig_width = df["orig_width"].tolist()
+   predict_height = df["predict_height"].tolist()
+   predict_width = df["predict_width"].tolist()
+
    # --- 3. spočítej metriky ---
    metrics = get_metrics(cfg["predict"]["kp_metrics"])
    metrics_values = {}
 
    for m in metrics:
       m.reset()
-      m.update(preds, targets)
+      m.update(preds, targets, orig_height=orig_height, orig_width=orig_width, predict_height=predict_height, predict_width=predict_width)
       metrics_values[type(m).__name__] = m.compute()
 
    print(metrics_values)

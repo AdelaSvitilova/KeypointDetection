@@ -3,6 +3,7 @@ from .pck_heatmaps import PCKHeatmaps
 from .aed import AED
 from .aed_heatmaps import AEDHeatmaps
 from .angles import CobbAngle
+from .angles_heatmaps import CobbAngleHeatmaps
 
 def get_metrics(names, **kwargs):
     """
@@ -27,6 +28,7 @@ def get_metrics(names, **kwargs):
         "AED": AED,
         "AED_heatmaps": AEDHeatmaps,
         "cobb_angle": CobbAngle,
+        "cobb_angle_heatmaps": CobbAngleHeatmaps,
     }
     selected = []
     for name in names:

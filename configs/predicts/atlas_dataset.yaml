@@ -1,11 +1,12 @@
 predict:
   name: atlas  # Prediction task/dataset name
-  model: epoch_1000.pt  # Model checkpoint; use null for best or specify epoch_X.pt
+  model: epoch_500.pt  # Model checkpoint; use null for best or specify epoch_X.pt
   images_list: "val.csv"  # Image list file; uncomment for fold: "val_atlas_vertebra_fold_0.csv"
   num_samples: null  # Number of samples to predict (overrides full list); null uses full dataset
   prefix: val  # Output prefix for prediction files
   num_select_images: 100
   batch_size: 1  # Inference batch size
   annotation_label: annotation_label.txt  # File mapping keypoint names/indices
-  metrics: ["PCK_heatmaps", "AED_heatmaps"]  # Heatmap-based metrics to compute
-  kp_metrics: ["PCK", "AED"]  # Keypoint-level metrics to compute
+  metrics: ["PCK_heatmaps", "AED_heatmaps", "cobb_angle_heatmaps"]  # Heatmap-based metrics to compute
+  metrics_directions: ["+", "-", "+"]
+  kp_metrics: ["PCK", "AED", "cobb_angle"]  # Keypoint-level metrics to compute

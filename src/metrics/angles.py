@@ -14,29 +14,27 @@ class CobbAngle(BaseMetric):
         det = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0] 
         return np.degrees(np.atan2(det, dot))
 
-    def update(self, preds, targets, orig_height, orig_width, c2_bl=0, c2_br=1, c7_bl=21, c7_br=22, **kwargs):
-        _, heatmaps_height, heatmaps_width = preds[0].shape
-
-        preds_keypoints = heatmaps_to_keypoints(preds)
-        keypoints_preds = scale_keypoints(preds_keypoints, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
-        keypoints_targets = scale_keypoints(targets, [orig_height, orig_width], [heatmaps_height, heatmaps_width])
+    def update(self, preds, targets, orig_height, orig_width, predict_height=None, predict_width=None, c2_bl=0, c2_br=1, c7_bl=21, c7_br=22, **kwargs):
+        if orig_height and predict_height and orig_width and predict_width and (orig_height, orig_width) != (predict_height, predict_width):
+            preds = scale_keypoints(preds, [orig_height, orig_width], [predict_height, predict_width])
+            targets = scale_keypoints(targets, [orig_height, orig_width], [predict_height, predict_width])
 
         cobb_preds = self._compute_cobb(
-            keypoints_preds[:, c2_bl, :], 
-            keypoints_preds[:, c2_br, :], 
-            keypoints_preds[:, c7_bl, :], 
-            keypoints_preds[:, c7_br, :]
+            preds[:, c2_bl, :], 
+            preds[:, c2_br, :], 
+            preds[:, c7_bl, :], 
+            preds[:, c7_br, :]
         )
         cobb_targets = self._compute_cobb(
-            keypoints_targets[:, c2_bl, :], 
-            keypoints_targets[:, c2_br, :], 
-            keypoints_targets[:, c7_bl, :], 
-            keypoints_targets[:, c7_br, :]
+            targets[:, c2_bl, :], 
+            targets[:, c2_br, :], 
+            targets[:, c7_bl, :], 
+            targets[:, c7_br, :]
         )
 
         error = (cobb_preds - cobb_targets + 180) % 360 - 180
 
-        self.error_sum += np.mean(error)
+        self.error_sum += abs(np.mean(error))
         self.total_points +=1
         
 
