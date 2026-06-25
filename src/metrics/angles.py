@@ -15,9 +15,10 @@ class CobbAngle(BaseMetric):
         return np.degrees(np.atan2(det, dot))
 
     def update(self, preds, targets, orig_height, orig_width, predict_height=None, predict_width=None, c2_bl=0, c2_br=1, c7_bl=21, c7_br=22, **kwargs):
-        if orig_height and predict_height and orig_width and predict_width and (orig_height, orig_width) != (predict_height, predict_width):
-            preds = scale_keypoints(preds, [orig_height, orig_width], [predict_height, predict_width])
-            targets = scale_keypoints(targets, [orig_height, orig_width], [predict_height, predict_width])
+        if orig_height is not None and predict_height is not None and orig_width is not None and predict_width is not None:
+            if not (np.array_equal(orig_height, predict_height) and np.array_equal(orig_width, predict_width)):
+                preds = scale_keypoints(preds, [orig_height, orig_width], [predict_height, predict_width])
+                targets = scale_keypoints(targets, [orig_height, orig_width], [predict_height, predict_width])
 
         cobb_preds = self._compute_cobb(
             preds[:, c2_bl, :], 
@@ -34,7 +35,7 @@ class CobbAngle(BaseMetric):
 
         error = (cobb_preds - cobb_targets + 180) % 360 - 180
 
-        self.error_sum += abs(np.mean(error))
+        self.error_sum += np.mean(abs(error))
         self.total_points +=1
         
 

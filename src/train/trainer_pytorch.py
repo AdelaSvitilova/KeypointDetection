@@ -343,6 +343,7 @@ class PytorchTrainer(BaseTrainer):
         sigma_scale=0.25, 
         min_peak_threshold=0.05,  # Prahování pro prázdná okna (0 = vypnuto)
     ):
+        print("sliding window predict")
         if isinstance(window_size, (list, tuple)):
             window_size = window_size[0]
 

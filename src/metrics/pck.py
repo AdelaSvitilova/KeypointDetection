@@ -43,9 +43,10 @@ class PCK(BaseMetric):
         preds_xy = preds[..., :2]
         targets_xy = targets[..., :2]
 
-        if orig_height and predict_height and orig_width and predict_width and (orig_height, orig_width) != (predict_height, predict_width):
-            preds_xy = scale_keypoints(preds_xy, [orig_height, orig_width], [predict_height, predict_width])
-            targets_xy = scale_keypoints(targets_xy, [orig_height, orig_width], [predict_height, predict_width])
+        if orig_height is not None and predict_height is not None and orig_width is not None and predict_width is not None:
+            if not (np.array_equal(orig_height, predict_height) and np.array_equal(orig_width, predict_width)):
+                preds_xy = scale_keypoints(preds_xy, [orig_height, orig_width], [predict_height, predict_width])
+                targets_xy = scale_keypoints(targets_xy, [orig_height, orig_width], [predict_height, predict_width])
 
         # Compute Euclidean distance for each keypoint
         # Shape: (B, K)
