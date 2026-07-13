@@ -50,10 +50,10 @@ dataset:
   params:
     input_size:
       - 256  # Input height
-      - 192  # Input width
+      - 256  # Input width
     output_size:
       - 64  # Output heatmap height
-      - 48  # Output heatmap width
+      - 64  # Output heatmap width
     window_size:
       - 256 
       - 256 
