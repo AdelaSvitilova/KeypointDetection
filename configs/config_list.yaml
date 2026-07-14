@@ -1,6 +1,6 @@
 # List of all configurations, overwritten sequentially; the basic configuration must always be first
 configs:
-  - configs/base.yaml #Always must be first!
+  - configs/base_config.yaml #Always must be first!
 
   - configs/models/stacked_hourglass_pytorch.yaml
   # - configs/models/HRNet_pytorch.yaml

@@ -2,7 +2,7 @@ model:
   name: HRNet_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
   special_mode: null  # Custom processing mode (removes 5th dimension)
-  predict_type: "sliding_window"
+  predict_type: null #"sliding_window"
   params:
     input_channels: 3  # RGB input channels
     num_keypoints: 23  # Number of keypoints to predict

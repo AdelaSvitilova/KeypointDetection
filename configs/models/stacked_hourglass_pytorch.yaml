@@ -2,7 +2,7 @@ model:
   name: stacked_hourglass_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
   special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
-  predict_type: "sliding_window"
+  predict_type: null #"sliding_window"
   params:
     input_channels: 3  # RGB input channels
     num_keypoints: 23  # Number of keypoints to predict (otput dimension)
@@ -18,7 +18,7 @@ loss:
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
 
 metrics:
-  names: [PCK_heatmaps, AED_heatmaps, cobb_angle]  # Metrics to evaluate (PCK/AED on heatmaps)
+  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
 
 dataset:
   params:
