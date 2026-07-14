@@ -8,7 +8,7 @@ While the core architecture is designed to be framework-agnostic and is ready to
 
 This project uses the Cervical Spine X-ray Atlas (CSXA) V3.0 dataset.
 
-Yu Ran, “Cervical Spine X-ray Atlas (CSXA) V3.0.” Science Data Bank, May 15, 2024 [Online]. Available: https://doi.org/10.57760/sciencedb.15391. [Accessed: Apr. 08, 2026]
+Yu Ran, “Cervical Spine X-ray Atlas (CSXA) V3.0.” Science Data Bank, May 15, 2024 [Online]. Available: [ScienceDB (DOI: 10.57760/sciencedb.15391)](https://doi.org/10.57760/sciencedb.15391). [Accessed: Apr. 08, 2026]
 
 Changes were made to the original dataset.
 The dataset was modified: multiple JSON files were combined into a single summary CSV file called atlas_verteba_full.csv.
