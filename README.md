@@ -56,7 +56,7 @@ Download the entire pre-trained experiment folder from here: [Google Drive](http
 
 **Step 2: Prepare the directory**
 Extract the downloaded folder and place it directly into the `results/` directory. The structure should look like this:
-`results/[experiment_name]/`
+`results/experiment_name/`
 
 **Step 3: Update configuration**
 Before running the prediction script, you need to specify which experiment to use. Open `configs/base_config.yaml` and change the `experiment_name` variable to match the exact name of the downloaded folder.
@@ -81,8 +81,6 @@ Once the experiment name is set, execute the prediction script:
 
 This project uses the following third-party implementations:
 
----
-
 ### Stacked Hourglass Networks (PyTorch implementation)  
 https://github.com/princeton-vl/pytorch_stacked_hourglass  
 
@@ -102,7 +100,7 @@ Original PyTorch implementation by Chris Rockwell.
 
 Licensed under the BSD 3-Clause License.  
 
----
+Modifications have been made in this repository.
 
 ### High-Resolution Network (HRNet) for Human Pose Estimation  
 https://github.com/HRNet/HRNet-Human-Pose-Estimation  
@@ -118,7 +116,5 @@ Bin Xiao, Haiping Wu, and Yichen Wei
 ECCV 2018  
 
 Licensed under the MIT License.  
-
----
 
 Modifications have been made in this repository.
