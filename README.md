@@ -28,7 +28,7 @@ The repository contains only a few test images, along with generated val.csv and
 **Installation:**
 1. Clone the repository:
 ```bash
-   git clone [https://github.com/AdelaSvitilova/KeypointDetection.git](https://github.com/AdelaSvitilova/KeypointDetection.git)
+   git clone https://github.com/AdelaSvitilova/KeypointDetection.git
    cd KeypointDetection
 ```
 2. Install the required dependencies:
@@ -52,7 +52,7 @@ If you wish to run further experiments, change hyperparameters, or train on the 
 To run predictions on new images, you can either use a model you trained yourself in the previous step, or use the pre-trained models generated during this thesis to avoid training from scratch.
 
 **Step 1: Download the pre-trained model**
-Download the entire pre-trained experiment folder from here: [Google Drive Link](https://drive.google.com/drive/folders/1qH2ezr4zkesicUub4X2DCb9tuE-ZjEmQ?usp=sharing)
+Download the entire pre-trained experiment folder from here: [Google Drive](https://drive.google.com/drive/folders/1qH2ezr4zkesicUub4X2DCb9tuE-ZjEmQ?usp=sharing)
 
 **Step 2: Prepare the directory**
 Extract the downloaded folder and place it directly into the `results/` directory. The structure should look like this:
