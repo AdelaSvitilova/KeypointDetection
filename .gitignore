@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 tmp.py
+TODO*
 */coco_full
 */atlas_full
 results/*
