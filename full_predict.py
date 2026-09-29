@@ -66,7 +66,7 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
    H, W = image.shape[:2]
    H_h, W_h = heatmaps[0].shape
 
-   # Combine heatmaps
+   # Combine heatmaps for overlay
    combined = np.zeros((H, W), dtype=np.float32)
    for hm in heatmaps:
       hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
@@ -139,9 +139,9 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
    metrics = list(metrics_values.keys())
 
    for metric, direction in reversed(list(zip(metrics, cfg["predict"]["metrics_directions"]))):
-        is_reverse = (direction == '+')
-        
-        results.sort(key=lambda x: x[metric], reverse=is_reverse)
+      is_reverse = (direction == '+')
+      
+      results.sort(key=lambda x: x[metric], reverse=is_reverse)
 
    # Save results to CSV
    csv_path = os.path.join(folder_path, f"{cfg["predict"]["prefix"]}_metrics_sorted.csv")
@@ -655,4 +655,4 @@ def main():
    analyze_prediction(cfg, folder_path, df)
 
 if __name__ == "__main__":
-    main()
+   main()

@@ -1,7 +1,7 @@
 # Basic configuration, can be overwritten by other files
 
 experiment:
-  name: EXP_HRNet_optuna_small  # Experiment identifier
+  name: EXP_sliding_window_Stacked_Hourglass_optuna  # Experiment identifier
   continue_from: null  # Checkpoint to resume from; null means train from scratch (e.g., epoch_10.pt or best.pt)
   seed: 42
   optuna: True
@@ -24,39 +24,15 @@ train:
     eta_min: 1e-8  # Minimum learning rate
 
 model:
-  name: HRNet_pytorch  # Model architecture name
+  name: stacked_hourglass_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
-  special_mode: null  # Custom processing mode (removes 5th dimension)
+  special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
+  predict_type: "sliding_window"
   params:
     input_channels: 3  # RGB input channels
-    num_keypoints: 23  # Number of keypoints to predict
-    
-    init_weights: True
-    final_conv_kernel: 1
-    stage2:
-      num_modules: 1
-      num_branches: 2
-      block: BASIC
-      num_blocks: [4, 4]
-      num_channels: [32, 64]
-      fuse_method: SUM
-    stage3:
-      num_modules: 4
-      num_branches: 3
-      block: BASIC
-      num_blocks: [4, 4, 4]
-      num_channels: [32, 64, 128]
-      fuse_method: SUM
-    stage4:
-      num_modules: 3
-      num_branches: 4
-      block: BASIC
-      num_blocks: [4, 4, 4, 4]
-      num_channels: [32, 64, 128, 256]
-      fuse_method: SUM
-
-    pretrained:  "" #"results/pose_hrnet_w32_256x192.pth"
-    pretrained_layers: [conv1, bn1, conv2, bn2, layer1, transition1, stage2, transition2, stage3, transition3, stage4]
+    num_keypoints: 23  # Number of keypoints to predict (otput dimension)
+    nstack: 5  # Number of stacked hourglass networks
+    inp_dim: 256  # Input feature dimension
 
 keypoint_format: heatmaps  # Output format: 'heatmaps'
 
@@ -135,8 +111,8 @@ optuna:
 
   loss.params.losses:
     type: list 
-    choices1:  [MSE, L2Norm, Huber]
-    choices2:  [AED, KLDiv]
+    choices1:  [multi_MSE, multi_L2Norm, multi_Huber]
+    choices2:  [multi_AED, multi_KLDiv]
   loss.params.weights:
     type: weights 
     low: 0
