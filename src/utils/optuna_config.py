@@ -112,6 +112,35 @@ def apply_optuna_best(cfg, best):
 
     # Inject best parameters into config
     for path, value in best.items():
+        if path in cfg_optuna["optuna"]:
+            param_type = cfg_optuna["optuna"][path]["type"]
+
+            # Weights are stored in Optuna as a single value w1.
+            # The second weight is derived as 1 - w1.
+            if param_type == "weights":
+                value = [value, 1 - value]
+
+        else:
+            # Parameters stored as separate list elements:
+            # <path>_1, <path>_2
+            base_path = path.rsplit("_", 1)[0]
+
+            if (
+                path.endswith("_1")
+                and base_path in cfg_optuna["optuna"]
+                and cfg_optuna["optuna"][base_path]["type"] == "list"
+            ):
+                path = base_path
+
+                value = [
+                    best[f"{path}_1"],
+                    best[f"{path}_2"],
+                ]
+
+            else:
+                continue
+
         set_nested(cfg_optuna, path, value)
+
 
     return cfg_optuna

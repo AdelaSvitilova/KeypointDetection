@@ -81,6 +81,7 @@ class PytorchTrainer(BaseTrainer):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
         # Initialize learning rate scheduler based on the provided configuration
+        self.scheduler = None        
         if scheduler == "CosineAnnealingLR":
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer, 
@@ -168,7 +169,7 @@ class PytorchTrainer(BaseTrainer):
                 loss.backward()
                 self.optimizer.step()
 
-                running_loss += loss.item()
+                running_loss += loss.item() * x.size(0)
 
                 # Calculate metrics on detached tensors to free up computational graph memory
                 for metric in self.metrics:
@@ -178,6 +179,8 @@ class PytorchTrainer(BaseTrainer):
                         norm_coefficient=item["norm_coefficient"].detach().cpu().numpy(),
                         orig_height=item["orig_height"].detach().cpu().numpy(),
                         orig_width=item["orig_width"].detach().cpu().numpy(),
+                        predict_height=preds_tmp.shape[-2],
+                        predict_width=preds_tmp.shape[-1],
                     )
 
             end = time.time()
@@ -212,7 +215,7 @@ class PytorchTrainer(BaseTrainer):
                         preds_val_tmp = preds_val
 
                     loss_val = self.loss_fn(preds_val, targets=y_h_val, keypoint_targets=y_val)
-                    val_loss += loss_val.item()
+                    val_loss += loss_val.item() * x_val.size(0)
 
                     for metric in self.metrics:
                         metric.update(
@@ -221,6 +224,8 @@ class PytorchTrainer(BaseTrainer):
                             norm_coefficient=item["norm_coefficient"].detach().cpu().numpy(),
                             orig_height=item["orig_height"].detach().cpu().numpy(),
                             orig_width=item["orig_width"].detach().cpu().numpy(),
+                            predict_height=preds_val_tmp.shape[-2],
+                            predict_width=preds_val_tmp.shape[-1],
                         )
 
             end = time.time()
@@ -235,7 +240,8 @@ class PytorchTrainer(BaseTrainer):
             val_metrics = {type(m).__name__: m.compute() for m in self.metrics}
 
             # Step the learning rate scheduler
-            self.scheduler.step()
+            if self.scheduler is not None:
+                self.scheduler.step()
             
             # Save periodic checkpoint
             if (epoch) % self.save_every_epoch == 0:
@@ -247,12 +253,12 @@ class PytorchTrainer(BaseTrainer):
             
             # Save best checkpoint based on validation loss
             if val_loss < best_val_loss:
+                best_val_loss = val_loss
                 self.save_checkpoint(
                     epoch,
                     best_val_loss, 
                     path = self.checkpoint_dir / f"best.pt",
                 )
-                best_val_loss = val_loss
 
             print(f"Epoch {epoch} | Train Loss: {train_loss:.3e} | Train Metrics: {train_metrics_text} | Train Time: {train_time} | Val Loss: {val_loss:.3e} | Val Metrics: {val_metrics_text} | Val Time: {val_time} | lr: {self.optimizer.param_groups[0]['lr']:.3e}")
 
@@ -286,7 +292,7 @@ class PytorchTrainer(BaseTrainer):
 
             # Report to Optuna and check for pruning
             if self.trial:
-                self.trial.report(train_loss, epoch)
+                self.trial.report(val_loss, epoch)
                 if self.trial.should_prune():
                     raise optuna.TrialPruned()
 
@@ -301,7 +307,7 @@ class PytorchTrainer(BaseTrainer):
         if self.use_tensorboard:
             writer.close()
 
-        return train_loss
+        return val_loss #best_val_loss
 
     def save_checkpoint(self, epoch, best_val_loss, path):
         """Saves the model and optimizer states to a file.
@@ -364,7 +370,7 @@ class PytorchTrainer(BaseTrainer):
         """
         epoch, start_epoch, best_val_loss = self.load_model_from_checkpoint(checkpoint_name)
         print(f"Loaded checkpoint from epoch {epoch}. Resuming training at epoch {start_epoch + 1}.")
-        self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
+        return self.train(start_epoch=start_epoch, best_val_loss=best_val_loss)
 
     def predict(
         self, 

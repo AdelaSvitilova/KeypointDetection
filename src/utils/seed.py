@@ -20,9 +20,6 @@ def set_global_seed(seed_to_set):
     random.seed(SEED)
     np.random.seed(SEED)
 
-    # Optuna sampler seed (for reproducible hyperparameter search)
-    sampler = optuna.samplers.TPESampler(seed=SEED)
-
     # PyTorch reproducibility settings (if available)
     try:
         import torch

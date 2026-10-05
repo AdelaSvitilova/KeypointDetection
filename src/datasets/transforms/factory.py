@@ -57,7 +57,7 @@ def get_transform(
     compose_kwargs["keypoint_params"] = (
         A.KeypointParams(
             format="xy",
-            remove_invisible=False,
+            remove_invisible=True,
         )
     )
 

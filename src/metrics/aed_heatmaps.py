@@ -15,7 +15,7 @@ class AEDHeatmaps(BaseMetric):
         """Initialize the wrapped AED metric."""
         self.metric = AED()
 
-    def update(self, preds, targets, **kwargs):
+    def update(self, preds, targets, orig_height, orig_width, predict_height=None, predict_width=None, **kwargs):
         """Update metric with a new batch of predictions.
 
         Args:
@@ -31,8 +31,10 @@ class AEDHeatmaps(BaseMetric):
         # Convert predicted heatmaps into keypoint coordinates
         preds_kp = heatmaps_to_keypoints(preds)
 
+        _, heatmaps_height, heatmaps_width = preds[0].shape
+
         # Delegate distance computation to the AED metric
-        self.metric.update(preds_kp, targets)
+        self.metric.update(preds_kp, targets, orig_height, orig_width, predict_height=heatmaps_height, predict_width=heatmaps_width, **kwargs)
 
     def compute(self):
         """Compute the final AED value.

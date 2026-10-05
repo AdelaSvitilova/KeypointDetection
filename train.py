@@ -139,11 +139,13 @@ def main():
     import uuid
     if cfg["experiment"]["optuna"]:
         print("Optimalization by optuna")
+        sampler = optuna.samplers.TPESampler(seed=cfg["experiment"]["seed"])
         study = optuna.create_study(
             direction="minimize",
+            sampler=sampler,
             pruner=optuna.pruners.HyperbandPruner(),
             study_name=f"optuna_experiment_{uuid.uuid4()}",
-            storage=f"sqlite:///results/{cfg["experiment"]["name"]}/optuna_experiment.db",
+            storage=f"sqlite:///results/{cfg['experiment']['name']}/optuna_experiment.db",
             load_if_exists=False
         )
         study.optimize(lambda trial: objective(trial, cfg), n_trials=cfg["experiment"]["optuna_trials"])

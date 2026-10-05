@@ -130,8 +130,14 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
 
    # === Prediction loop ===
    for batch, preds in trainer.predict(loader, method=cfg["model"]["predict_type"], checkpoint=cfg["predict"]["model"], **cfg["dataset"]["params"]):
-      for img, pred, fname, keypoints, orig_height, orig_width in zip(
-         batch["image"], preds, batch["filename"], batch["keypoints"], batch["orig_height"], batch["orig_width"]
+      for img, pred, fname, keypoints, norm_coefficient, orig_height, orig_width in zip(
+         batch["image"], 
+         preds, 
+         batch["filename"], 
+         batch["keypoints"], 
+         batch["keypoints"], 
+         batch["orig_height"], 
+         batch["orig_width"]
       ):
          # Visualize combined heatmap
          visualize_heatmaps_combined(img, pred, path_to_save, fname,
@@ -141,7 +147,13 @@ def predict_images(cfg, trainer, loader, metrics, folder_path):
          metrics_values = {}
          for m in metrics:
             m.reset()
-            m.update(np.expand_dims(pred, axis=0), np.expand_dims(keypoints, axis=0), orig_height=orig_height, orig_width=orig_width)
+            m.update(
+               np.expand_dims(pred, axis=0), 
+               np.expand_dims(keypoints, axis=0), 
+               norm_coefficient=norm_coefficient,
+               orig_height=orig_height, 
+               orig_width=orig_width
+            )
             metrics_values[type(m).__name__] = m.compute()
 
          # Add filename and metric scores to results
@@ -247,8 +259,8 @@ def make_dataset_of_prediction(cfg, trainer, dataset, annotations_label):
       for batch_idx in range(preds_np.shape[0]):
          row = {"filename": filenames[batch_idx]}
          row.update({
-            "orig_height": int(orig_height),
-            "orig_width": int(orig_width),
+            "orig_height": int(orig_height[batch_idx]),
+            "orig_width": int(orig_width[batch_idx]),
          })
          for keypoint_idx in range(preds_np.shape[1]):
             heatmap = preds_np[batch_idx, keypoint_idx]
@@ -461,18 +473,31 @@ def analysis_metrics(cfg, df):
       preds[:, i, 0] = df[f"{kp}_pred_x"]
       preds[:, i, 1] = df[f"{kp}_pred_y"]
 
+   # --- 3. Get image / heatmap dimensions ---
    orig_height = df["orig_height"].tolist()
-   orig_width = df["orig_width"].tolist()
+   orig_width = df["orig_width"].tolist() 
+
    predict_height = df["predict_height"].tolist()
    predict_width = df["predict_width"].tolist()
 
-   # --- 3. Compute metrics ---
+   # --- 4. Get normalization coefficient from config ---
+   norm_coefficient = cfg["dataset"]["params"]["norm_coefficient"]
+
+   # --- 5. Compute metrics ---
    metrics = get_metrics(cfg["predict"]["kp_metrics"])
    metrics_values = {}
 
    for m in metrics:
       m.reset()
-      m.update(preds, targets, orig_height=orig_height, orig_width=orig_width, predict_height=predict_height, predict_width=predict_width)
+      m.update(
+         preds, 
+         targets, 
+         norm_coefficient=norm_coefficient,
+         orig_height=orig_height, 
+         orig_width=orig_width, 
+         predict_height=predict_height, 
+         predict_width=predict_width
+      )
       metrics_values[type(m).__name__] = m.compute()
 
    print(metrics_values)
