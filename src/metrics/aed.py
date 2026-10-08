@@ -1,6 +1,5 @@
 import numpy as np
 from .base_metric import BaseMetric
-from .utils import scale_keypoints
 
 class AED(BaseMetric):
     """Average Euclidean Distance (AED) metric.
@@ -17,7 +16,7 @@ class AED(BaseMetric):
         self.sum_dist = 0.0
         self.total_points = 0
 
-    def update(self, preds, targets, orig_height=None, orig_width=None, predict_height=None, predict_width=None, **kwargs):
+    def update(self, preds, targets, **kwargs):
         """Update metric with a new batch of predictions.
 
         Args:
@@ -31,11 +30,6 @@ class AED(BaseMetric):
         # Extract x, y coordinates only
         preds_xy = preds[..., :2]
         targets_xy = targets[..., :2]
-
-        if orig_height is not None and predict_height is not None and orig_width is not None and predict_width is not None:
-            if not (np.array_equal(orig_height, predict_height) and np.array_equal(orig_width, predict_width)):
-                preds_xy = scale_keypoints(preds_xy, [orig_height, orig_width], [predict_height, predict_width])
-                targets_xy = scale_keypoints(targets_xy, [orig_height, orig_width], [predict_height, predict_width])
 
         # Compute Euclidean distance per keypoint
         # Shape: (B, K)

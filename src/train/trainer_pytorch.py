@@ -176,11 +176,7 @@ class PytorchTrainer(BaseTrainer):
                     metric.update(
                         preds_tmp.detach().cpu().numpy(), 
                         y.detach().cpu().numpy(), 
-                        norm_coefficient=item["norm_coefficient"].detach().cpu().numpy(),
-                        orig_height=item["orig_height"].detach().cpu().numpy(),
-                        orig_width=item["orig_width"].detach().cpu().numpy(),
-                        predict_height=preds_tmp.shape[-2],
-                        predict_width=preds_tmp.shape[-1],
+                        norm_coefficient=item["norm_coefficient"].detach().cpu().numpy()
                     )
 
             end = time.time()
@@ -221,11 +217,7 @@ class PytorchTrainer(BaseTrainer):
                         metric.update(
                             preds_val_tmp.detach().cpu().numpy(), 
                             y_val.detach().cpu().numpy(), 
-                            norm_coefficient=item["norm_coefficient"].detach().cpu().numpy(),
-                            orig_height=item["orig_height"].detach().cpu().numpy(),
-                            orig_width=item["orig_width"].detach().cpu().numpy(),
-                            predict_height=preds_val_tmp.shape[-2],
-                            predict_width=preds_val_tmp.shape[-1],
+                            norm_coefficient=item["norm_coefficient"].detach().cpu().numpy()
                         )
 
             end = time.time()

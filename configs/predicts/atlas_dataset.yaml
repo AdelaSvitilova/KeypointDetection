@@ -6,7 +6,10 @@ predict:
   prefix: val  # Output prefix for prediction files
   num_select_images: 100
   batch_size: 1  # Inference batch size
+  predict_images: true
+  select_images: true
+  save_predictions: true
   annotation_label: annotation_label.txt  # File mapping keypoint names/indices
-  metrics: ["PCK_heatmaps", "AED_heatmaps", "cobb_angle_heatmaps"]  # Heatmap-based metrics to compute
+  metrics: ["PCK", "AED", "cobb_angle"]  # Heatmap-based metrics to compute
   metrics_directions: ["+", "-", "+"]
   kp_metrics: ["PCK", "AED", "cobb_angle"]  # Keypoint-level metrics to compute

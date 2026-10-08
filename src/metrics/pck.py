@@ -1,6 +1,5 @@
 import numpy as np
 from .base_metric import BaseMetric
-from .utils import scale_keypoints
 
 class PCK(BaseMetric):
     """Percentage of Correct Keypoints (PCK).
@@ -24,7 +23,7 @@ class PCK(BaseMetric):
         self.correct = 0
         self.total = 0
 
-    def update(self, preds, targets, norm_coefficient=25, orig_height=None, orig_width=None, predict_height=None, predict_width=None, **kwargs):
+    def update(self, preds, targets, norm_coefficient=25, **kwargs):
         """Update metric with a new batch.
 
         Args:
@@ -42,11 +41,6 @@ class PCK(BaseMetric):
         # Extract x and y coordinates
         preds_xy = preds[..., :2]
         targets_xy = targets[..., :2]
-
-        if orig_height is not None and predict_height is not None and orig_width is not None and predict_width is not None:
-            if not (np.array_equal(orig_height, predict_height) and np.array_equal(orig_width, predict_width)):
-                preds_xy = scale_keypoints(preds_xy, [orig_height, orig_width], [predict_height, predict_width])
-                targets_xy = scale_keypoints(targets_xy, [orig_height, orig_width], [predict_height, predict_width])
 
         # Compute Euclidean distance for each keypoint
         # Shape: (B, K)

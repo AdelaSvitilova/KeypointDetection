@@ -19,7 +19,7 @@ class PCKHeatmaps(BaseMetric):
         """
         self.metric = PCK(threshold)
 
-    def update(self, preds, targets, norm_coefficient=25, orig_height=None, orig_width=None, predict_height=None, predict_width=None, **kwargs):
+    def update(self, preds, targets, norm_coefficient=25, **kwargs):
         """Update metric with a new batch of predictions.
 
         Args:
@@ -34,13 +34,14 @@ class PCKHeatmaps(BaseMetric):
             **kwargs: Additional unused arguments for compatibility.
         """
 
+        print("PCK update preds:", preds.shape)
+        print("PCK update targets:", targets.shape)
+
         # Convert predicted heatmaps to keypoint coordinates
         preds_kp = heatmaps_to_keypoints(preds)
 
-        _, heatmaps_height, heatmaps_width = preds[0].shape
-
         # Delegate metric computation to the base PCK metric
-        self.metric.update(preds_kp, targets, norm_coefficient, orig_height, orig_width, predict_height=heatmaps_height, predict_width=heatmaps_width, **kwargs)
+        self.metric.update(preds_kp, targets, norm_coefficient, **kwargs)
 
     def compute(self):
         """Compute the final PCK score.

@@ -31,41 +31,41 @@ def heatmaps_to_keypoints(heatmaps):
 
     return keypoints
 
-def scale_keypoints(keypoints, orig_size, pred_size):
-    """
-    keypoints: (B, N, 2) or (B, N, 3)
-    orig_size: [heights(B,), widths(B,)]
-    pred_size: 
-        - scalars [H_in, W_in]
-        - array of shape (B, 2) e.g., [[H1, W1], [H2, W2]]
-        - two separate arrays [heights(B,), widths(B,)]
+# def scale_keypoints(keypoints, orig_size, pred_size):
+#     """
+#     keypoints: (B, N, 2) or (B, N, 3)
+#     orig_size: [heights(B,), widths(B,)]
+#     pred_size: 
+#         - scalars [H_in, W_in]
+#         - array of shape (B, 2) e.g., [[H1, W1], [H2, W2]]
+#         - two separate arrays [heights(B,), widths(B,)]
 
-    returns: (B, N, 2)
-    """
+#     returns: (B, N, 2)
+#     """
 
-    keypoints = np.asarray(keypoints)
+#     keypoints = np.asarray(keypoints)
 
-    # np.atleast_1d ensures that even single scalar values act as 1D arrays
-    H_orig = np.atleast_1d(orig_size[0])  # (B,) or (1,)
-    W_orig = np.atleast_1d(orig_size[1])  # (B,) or (1,)
+#     # np.atleast_1d ensures that even single scalar values act as 1D arrays
+#     H_orig = np.atleast_1d(orig_size[0])  # (B,) or (1,)
+#     W_orig = np.atleast_1d(orig_size[1])  # (B,) or (1,)
 
-    # Safe conversion of the predicted size
-    pred_size = np.atleast_1d(pred_size)
+#     # Safe conversion of the predicted size
+#     pred_size = np.atleast_1d(pred_size)
 
-    # Unpack based on input shape
-    if pred_size.ndim == 2 and pred_size.shape[1] == 2:
-        # If input is in (B, 2) format, extract columns
-        H_in = pred_size[:, 0]
-        W_in = pred_size[:, 1]
-    else:
-        # If input is [H, W] (scalars) or two separate arrays [array_H, array_W]
-        H_in = pred_size[0]
-        W_in = pred_size[1]
+#     # Unpack based on input shape
+#     if pred_size.ndim == 2 and pred_size.shape[1] == 2:
+#         # If input is in (B, 2) format, extract columns
+#         H_in = pred_size[:, 0]
+#         W_in = pred_size[:, 1]
+#     else:
+#         # If input is [H, W] (scalars) or two separate arrays [array_H, array_W]
+#         H_in = pred_size[0]
+#         W_in = pred_size[1]
 
-    # Numpy automatically handles array/array and array/scalar division
-    scale = np.stack(
-        [W_orig / W_in, H_orig / H_in],
-        axis=1
-    )  # (B, 2) or (1, 2)
+#     # Numpy automatically handles array/array and array/scalar division
+#     scale = np.stack(
+#         [W_orig / W_in, H_orig / H_in],
+#         axis=1
+#     )  # (B, 2) or (1, 2)
 
-    return keypoints[:, :, :2] * scale[:, None, :]
+#     return keypoints[:, :, :2] * scale[:, None, :]

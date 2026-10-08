@@ -1,6 +1,6 @@
 import numpy as np
 from .base_metric import BaseMetric
-from .utils import heatmaps_to_keypoints, scale_keypoints
+from .utils import heatmaps_to_keypoints
 
 
 class CobbAngle(BaseMetric):
@@ -35,7 +35,7 @@ class CobbAngle(BaseMetric):
         det = v1[:, 0] * v2[:, 1] - v1[:, 1] * v2[:, 0] 
         return np.degrees(np.atan2(det, dot))
 
-    def update(self, preds, targets, orig_height, orig_width, predict_height=None, predict_width=None, c2_bl=0, c2_br=1, c7_bl=21, c7_br=22, **kwargs):
+    def update(self, preds, targets, c2_bl=0, c2_br=1, c7_bl=21, c7_br=22, **kwargs):
         """Update metric state with a new batch of predictions and targets.
 
         If original and prediction image dimensions are provided and differ,
@@ -55,11 +55,7 @@ class CobbAngle(BaseMetric):
             c7_br (int, optional): Index for C7 bottom-right keypoint. Defaults to 22.
             **kwargs: Additional unused arguments for compatibility.
         """
-        if orig_height is not None and predict_height is not None and orig_width is not None and predict_width is not None:
-            if not (np.array_equal(orig_height, predict_height) and np.array_equal(orig_width, predict_width)):
-                preds = scale_keypoints(preds, [orig_height, orig_width], [predict_height, predict_width])
-                targets = scale_keypoints(targets, [orig_height, orig_width], [predict_height, predict_width])
-
+       
         cobb_preds = self._compute_cobb(
             preds[:, c2_bl, :], 
             preds[:, c2_br, :], 

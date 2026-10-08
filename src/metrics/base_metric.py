@@ -10,7 +10,7 @@ class BaseMetric(ABC):
     """
 
     @abstractmethod
-    def update(self, preds, targets, orig_height, orig_width, predict_height, predict_width):
+    def update(self, preds, targets):
         """
         Update the internal state with new predictions and targets.
 
