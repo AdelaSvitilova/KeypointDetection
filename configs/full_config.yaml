@@ -62,6 +62,14 @@ dataset:
     output_size:
       - 64  # Output heatmap height
       - 64  # Output heatmap width
+    window_size:
+      - 256 
+      - 256 
+    window_output_size:
+      - 64
+      - 64
+    window_stride:
+      - 128
   augmentation:
     flip:
       use: True

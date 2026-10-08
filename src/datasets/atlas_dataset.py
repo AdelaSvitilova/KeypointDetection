@@ -22,6 +22,9 @@ class AtlasDataset(BaseDataset):
         num_keypoints=23,
         input_size=(256, 256),
         output_size=(64, 64),
+        window_size=(256, 256),
+        window_output_size=(64, 64),
+        predict_type=None,
         annotation_file="pose_dataset.csv",
         norm_coefficient=25,
         **kwargs
@@ -49,6 +52,10 @@ class AtlasDataset(BaseDataset):
         self.input_size = input_size
         self.output_size = output_size
         self.norm_coefficient = norm_coefficient
+
+        if predict_type == "sliding_window":
+            self.output_size = window_output_size
+            self.input_size = window_size
 
         # Load list of image filenames to use.
         with open(load_file, newline="") as f:

@@ -63,6 +63,7 @@ def train_model(cfg, trial):
         load=cfg["dataset"]["train"],
         num_samples=cfg["dataset"]["train_num_samples"],
         keypoint_format=cfg["keypoint_format"],
+        predict_type=cfg["model"]["predict_type"],
         transform=transform,
         **cfg["dataset"]["params"],
     )
@@ -81,6 +82,7 @@ def train_model(cfg, trial):
         load=cfg["dataset"]["val"],
         num_samples=cfg["dataset"]["val_num_samples"],
         keypoint_format=cfg["keypoint_format"],
+        predict_type=cfg["model"]["predict_type"],
         transform=transform,
         **cfg["dataset"]["params"],
     )

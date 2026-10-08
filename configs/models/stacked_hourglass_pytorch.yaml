@@ -31,6 +31,9 @@ dataset:
     window_size:
       - 256 
       - 256 
+    window_output_size:
+      - 64
+      - 64
     window_stride:
       - 128
 
