@@ -1,6 +1,6 @@
 predict:
   name: atlas  # Prediction task/dataset name
-  model: epoch_500.pt  # Model checkpoint; use null for best or specify epoch_X.pt
+  model: final.pt  # Model checkpoint; use null for best or specify epoch_X.pt
   images_list: "val.csv"  # Image list file; uncomment for fold: "val_atlas_vertebra_fold_0.csv"
   num_samples: null  # Number of samples to predict (overrides full list); null uses full dataset
   prefix: val  # Output prefix for prediction files

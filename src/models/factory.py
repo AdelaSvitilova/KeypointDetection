@@ -5,9 +5,10 @@ from .test_model_keras import TestModelKeras
 from .test_model_heatmap_pytorch import TestModelHeatmapPytorch
 from .test_model_heatmap_keras import TestModelHeatmapKeras
 from .HRNet_pytorch import HRNetPytorch
+from .dsnt_model_pytorch import DSNTModelPytorch
 
 # tato funkce dostane nízev modelu, který má použít a odpovídající parametry a vytvoří instanci třídy s danámi parametry
-def get_model(name, **kwargs):
+def get_model(name, use_dsnt=False, **kwargs):
     """
     Factory function to create a model instance based on its name.
 
@@ -37,4 +38,9 @@ def get_model(name, **kwargs):
     }
     if name not in models:
         raise ValueError(f"Unknown model name: {name}")
-    return models[name](**kwargs)
+
+    base_model = models[name](**kwargs)
+    if use_dsnt:
+        return DSNTModelPytorch(base_model)
+
+    return base_model

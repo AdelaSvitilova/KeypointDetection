@@ -1,0 +1,49 @@
+model:
+  name: stacked_hourglass_pytorch  # Model architecture name
+  backend: pytorch  # Framework backend (e.g., 'pytorch')
+  special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
+  predict_type: null #"sliding_window"
+  use_dsnt: True
+  params:
+    input_channels: 3  # RGB input channels
+    num_keypoints: 23  # Number of keypoints to predict (otput dimension)
+    nstack: 5  # Number of stacked hourglass networks
+    inp_dim: 256  # Input feature dimension
+
+keypoint_format: keypoints  # Output format: 'heatmaps'
+
+loss:
+  name: Huber  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted
+  params:
+    losses: ["multi_MSE", "multi_AED"]  # List of loss functions to combine
+    weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
+
+metrics:
+  names: [PCK, AED]  # Metrics to evaluate (PCK/AED on heatmaps)
+
+dataset:
+  params:
+    input_size:
+      - 256  # Input height
+      - 256  # Input width
+    output_size:
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
+    window_size:
+      - 256 
+      - 256 
+    window_output_size:
+      - 64
+      - 64
+    window_stride:
+      - 128
+
+train:
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
+  CosineAnnealingLR:
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
+  CosineAnnealingWarmRestarts:
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate

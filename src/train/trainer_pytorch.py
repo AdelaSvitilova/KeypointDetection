@@ -165,7 +165,10 @@ class PytorchTrainer(BaseTrainer):
                     preds_tmp = preds
                     
                 # Loss calculation and backpropagation
-                loss = self.loss_fn(preds, targets=y_h, keypoint_targets=y)
+                if self.keypoint_format == "keypoints":
+                    loss = self.loss_fn(preds, targets=y, keypoint_targets=y)
+                else:
+                    loss = self.loss_fn(preds, targets=y_h, keypoint_targets=y)
                 loss.backward()
                 self.optimizer.step()
 
@@ -210,7 +213,10 @@ class PytorchTrainer(BaseTrainer):
                     else:
                         preds_val_tmp = preds_val
 
-                    loss_val = self.loss_fn(preds_val, targets=y_h_val, keypoint_targets=y_val)
+                    if self.keypoint_format == "keypoints":
+                        loss_val = self.loss_fn(preds_val, targets=y_val, keypoint_targets=y_val)
+                    else:
+                        loss_val = self.loss_fn(preds_val, targets=y_h_val, keypoint_targets=y_val)
                     val_loss += loss_val.item() * x_val.size(0)
 
                     for metric in self.metrics:

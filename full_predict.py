@@ -43,7 +43,7 @@ def batch_loader(dataset, batch_size=1):
 
 
 def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_combined.png",
-                                show_points=True, threshold=0.05, keypoints=None):
+                                show_points=True, threshold=0.05, keypoints=None, output_shape=None):
     """Visualize combined heatmaps overlaid on an image.
 
     Args:
@@ -54,19 +54,27 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
         show_points (bool, optional): Whether to plot maxima and ground truth keypoints. Defaults to True.
         threshold (float, optional): Minimum heatmap max value to include in overlay. Defaults to 0.05.
         keypoints (list of np.ndarray, optional): Ground truth keypoints [num_points, 2]. Defaults to None.
+        output_shape (tuple, optional): Model output shape (H,W). If None, inferred from heatmaps.
     """
-    # Convert torch tensors to numpy for matplotlib and opencv
+    # Convert torch tensors to numpy
     if torch.is_tensor(image):
         image = image.cpu().numpy()
     if torch.is_tensor(heatmaps):
         heatmaps = heatmaps.cpu().numpy()
+    if torch.is_tensor(keypoints):
+        keypoints = keypoints.cpu().numpy()
 
     # Convert image format to HWC if needed
     if image.ndim == 3 and image.shape[0] in (1, 3):
         image = image.transpose(1, 2, 0)
     image = np.clip(image, 0, 1)
     H, W = image.shape[:2]
-    H_h, W_h = heatmaps[0].shape
+
+    # Get model output dimensions for coordinate scaling
+    if output_shape is None:
+        H_out, W_out = heatmaps.shape[-2:]
+    else:
+        H_out, W_out = output_shape
 
     # Combine all keypoint heatmaps for a single overlay
     combined = np.zeros((H, W), dtype=np.float32)
@@ -88,20 +96,17 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
 
     if show_points:
         # Mark maxima of each individual heatmap
-        for hm in heatmaps:
+        for i, hm in enumerate(heatmaps):
             hm_resized = cv2.resize(hm, (W, H), interpolation=cv2.INTER_LINEAR)
             y, x = np.unravel_index(np.argmax(hm_resized), hm_resized.shape)
-            ax.scatter(x, y, c="red", s=6, label="Prediction")
+            ax.scatter(x, y, c="red", s=6, label="Prediction" if i == 0 else None)
 
-        # Overlay ground truth keypoints if provided
+        # Overlay ground truth keypoints
         if keypoints is not None:
-            for i, kp_set in enumerate(keypoints):
-                kp_set = np.atleast_2d(kp_set).copy()
-                # Scale keypoints if heatmap dimensions differ from image dimensions
-                kp_set[:, 0] = kp_set[:, 0] * W / W_h
-                kp_set[:, 1] = kp_set[:, 1] * H / H_h
-                ax.scatter(kp_set[:, 0], kp_set[:, 1], c="green", s=6, marker="x",
-                           label="Anotation" if i == 0 else None)
+            keypoints = np.atleast_2d(keypoints).copy()
+            keypoints[:, 0] = keypoints[:, 0] * W / W_out
+            keypoints[:, 1] = keypoints[:, 1] * H / H_out
+            ax.scatter(keypoints[:, 0], keypoints[:, 1], c="green", s=6, marker="x", label="Annotation")
 
     # Filter out duplicate labels in legend
     handles, labels = ax.get_legend_handles_labels()
@@ -114,17 +119,81 @@ def visualize_heatmaps_combined(image, heatmaps, path_to_save, fname="heatmaps_c
     plt.close(fig)
 
 
-def heatmap_to_original_coordinates(coordinates, heatmap_shape, original_shape):
-    """Converts coordinates from heatmap space to original image space.
+def visualize_keypoints_combined(image, keypoints_pred, path_to_save, fname="keypoints_combined.png",
+                                 show_points=True, keypoints=None, output_shape=None):
+    """Visualize predicted keypoints directly overlaid on an image.
 
     Args:
-        coordinates (np.ndarray): Coordinates in heatmap space [N, 2].
-        heatmap_shape (tuple): Heatmap dimensions (height, width).
+        image (np.ndarray or torch.Tensor): Input image [C,H,W] or [H,W,3].
+        keypoints_pred (np.ndarray or torch.Tensor): Predicted keypoints [N,2] in model output coordinates.
+        path_to_save (str): Directory to save the resulting figure.
+        fname (str, optional): Filename for the saved figure. Defaults to "keypoints_combined.png".
+        show_points (bool, optional): Whether to plot predicted and ground truth keypoints. Defaults to True.
+        keypoints (list of np.ndarray, optional): Ground truth keypoints [num_points, 2]. Defaults to None.
+        output_shape (tuple, optional): Model output shape (H,W). Defaults to None.
+    """
+    # Convert torch tensors to numpy
+    if torch.is_tensor(image):
+        image = image.cpu().numpy()
+    if torch.is_tensor(keypoints_pred):
+        keypoints_pred = keypoints_pred.cpu().numpy()
+    if torch.is_tensor(keypoints):
+        keypoints = keypoints.cpu().numpy()
+
+    # Convert image format to HWC if needed
+    if image.ndim == 3 and image.shape[0] in (1, 3):
+        image = image.transpose(1, 2, 0)
+    image = np.clip(image, 0, 1)
+    H, W = image.shape[:2]
+
+    keypoints_pred = np.atleast_2d(np.asarray(keypoints_pred, dtype=float))
+
+    # Scale model output coordinates to image coordinates
+    if output_shape is not None:
+        H_out, W_out = output_shape
+        keypoints_pred = keypoints_pred.copy()
+        keypoints_pred[:, 0] = keypoints_pred[:, 0] * W / W_out
+        keypoints_pred[:, 1] = keypoints_pred[:, 1] * H / H_out
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(image)
+
+    if show_points:
+        # Mark predicted keypoints
+        for i, (x, y) in enumerate(keypoints_pred):
+            ax.scatter(x, y, c="red", s=6, label="Prediction" if i == 0 else None)
+
+        # Overlay ground truth keypoints
+        if keypoints is not None:
+            keypoints = np.atleast_2d(np.asarray(keypoints, dtype=float)).copy()
+            if output_shape is not None:
+                keypoints[:, 0] = keypoints[:, 0] * W / W_out
+                keypoints[:, 1] = keypoints[:, 1] * H / H_out
+            ax.scatter(keypoints[:, 0], keypoints[:, 1], c="green", s=6, marker="x", label="Annotation")
+
+    # Filter out duplicate labels in legend
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys())
+
+    ax.axis("off")
+    os.makedirs(path_to_save, exist_ok=True)
+    plt.savefig(os.path.join(path_to_save, fname), bbox_inches="tight")
+    plt.close(fig)
+
+
+def output_to_original_coordinates(coordinates, heatmap_shape, original_shape):
+    """Converts keypoint coordinates from model output space to original image space.
+
+    Args:
+        coordinates (np.ndarray): Keypoint coordinates in model output space [N, 2].
+        output_shape (tuple): Model output dimensions (height, width).
         original_shape (tuple): Original image dimensions (height, width).
 
     Returns:
-        np.ndarray: Coordinates in original image space [N, 2].
+        np.ndarray: Keypoint coordinates in original image space [N, 2].
     """
+
     heatmap_height, heatmap_width = heatmap_shape
     original_height, original_width = original_shape
 
@@ -187,25 +256,38 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
 
             keypoints = np.asarray(keypoints)
 
-            heatmap_height, heatmap_width = pred.shape[-2:]
+            # Determine the model output resolution used for coordinate conversion.
+            # Sliding-window prediction uses window_output_size, while standard prediction uses output_size.
+            if cfg["model"]["predict_type"] == "sliding_window":
+                heatmap_height, heatmap_width = cfg["dataset"]["params"]["window_output_size"]
+            else:
+                heatmap_height, heatmap_width = cfg["dataset"]["params"]["output_size"]
 
-            # Extract coordinates of maximum activation
-            predictions = []
+            if cfg["keypoint_format"] == "keypoints":
+                # DSNT output: [K, 2]
+                predictions = np.asarray(pred, dtype=float)
+            else:
+                # Heatmap output: [K, H, W]
 
-            for heatmap in pred:
-                y_pred, x_pred = np.unravel_index(np.argmax(heatmap), heatmap.shape)
-                predictions.append([x_pred, y_pred])
+                predictions = []
 
-            predictions = np.asarray(predictions, dtype=float)
+                for heatmap in pred:
+                    y_pred, x_pred = np.unravel_index(
+                        np.argmax(heatmap),
+                        heatmap.shape
+                    )
+                    predictions.append([x_pred, y_pred])
+
+                predictions = np.asarray(predictions, dtype=float)
 
             # Convert coordinates to original image space
-            prediction_original = heatmap_to_original_coordinates(
+            prediction_original = output_to_original_coordinates(
                 predictions,
                 (heatmap_height, heatmap_width),
                 (orig_height, orig_width)
             )
 
-            annotation_original = heatmap_to_original_coordinates(
+            annotation_original = output_to_original_coordinates(
                 keypoints,
                 (heatmap_height, heatmap_width),
                 (orig_height, orig_width)
@@ -213,14 +295,26 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
 
             # Visualize combined heatmap
             if predict_images_enabled:
-                visualize_heatmaps_combined(
-                    img,
-                    pred,
-                    path_to_save,
-                    fname,
-                    show_points=True,
-                    keypoints=keypoints
-                )
+                if cfg["keypoint_format"] == "keypoints":
+                    visualize_keypoints_combined(
+                        img,
+                        predictions,
+                        path_to_save,
+                        fname,
+                        show_points=True,
+                        keypoints=keypoints,
+                        output_shape=(heatmap_height, heatmap_width)
+                    )
+                else:
+                    visualize_heatmaps_combined(
+                        img,
+                        pred,
+                        path_to_save,
+                        fname,
+                        show_points=True,
+                        keypoints=keypoints,
+                        output_shape=(heatmap_height, heatmap_width)
+                    )
 
             # ============================================================
             # Metrics for current image - HEATMAP SPACE
@@ -970,6 +1064,7 @@ def main():
     # Create model
     model = get_model(
         cfg["model"]["name"],
+        use_dsnt=cfg["model"]["use_dsnt"], 
         cfg=cfg,
         **cfg["model"]["params"]
     )

@@ -45,7 +45,12 @@ def load_cfg():
 
 def train_model(cfg, trial):
     # === Model creation ===
-    model = get_model(cfg["model"]["name"], cfg=cfg, **cfg["model"]["params"])
+    model = get_model(
+        cfg["model"]["name"], 
+        use_dsnt=cfg["model"]["use_dsnt"], 
+        cfg=cfg, 
+        **cfg["model"]["params"]
+    )
     print(f"Model '{cfg['model']['name']}' initialized.")
 
     # === Dataset loading ===

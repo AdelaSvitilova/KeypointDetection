@@ -3,6 +3,7 @@ model:
   backend: pytorch  # Framework backend (e.g., 'pytorch')
   special_mode: null  # Custom processing mode (removes 5th dimension)
   predict_type: null #"sliding_window"
+  use_dsnt: False
   params:
     input_channels: 3  # RGB input channels
     num_keypoints: 23  # Number of keypoints to predict
