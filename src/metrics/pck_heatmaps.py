@@ -34,9 +34,6 @@ class PCKHeatmaps(BaseMetric):
             **kwargs: Additional unused arguments for compatibility.
         """
 
-        print("PCK update preds:", preds.shape)
-        print("PCK update targets:", targets.shape)
-
         # Convert predicted heatmaps to keypoint coordinates
         preds_kp = heatmaps_to_keypoints(preds)
 

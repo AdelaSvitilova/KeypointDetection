@@ -4,7 +4,8 @@ configs:
 
   # - configs/models/stacked_hourglass_pytorch.yaml
   # - configs/models/HRNet_pytorch.yaml
-  - configs/models/dsnt_stacked_hourglass_pytorch.yaml
+  # - configs/models/dsnt_stacked_hourglass_pytorch.yaml
+  - configs/models/CPN_pytorch.yaml
   
   # - configs/datasets/coco_dataset_full.yaml
   - configs/datasets/atlas_dataset.yaml

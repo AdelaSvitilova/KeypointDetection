@@ -1,0 +1,50 @@
+model:
+  name: CPN_pytorch
+  backend: pytorch
+  special_mode: null
+  predict_type: null
+  use_dsnt: False
+  params:
+    input_channels: 3
+    num_keypoints: 23
+    width: 32
+    pyramid_channels: 128
+    stage_blocks: [2, 2, 2, 2]
+
+keypoint_format: heatmaps
+
+loss:
+  name: MSE  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
+  params:
+    losses: ["MSE", "AED"]  # List of loss functions to combine
+    weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
+
+metrics:
+  names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
+
+dataset:
+  params:
+    input_size:
+      - 256  # Input height
+      - 256  # Input width
+    output_size:
+      - 64  # Output heatmap height
+      - 64  # Output heatmap width
+    window_size:
+      - 256 
+      - 256 
+    window_output_size:
+      - 64
+      - 64
+    window_stride:
+      - 128
+
+train:
+  scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts
+  CosineAnnealingLR:
+    T_max: 50  # Period for cosine annealing
+    eta_min: 1e-6  # Minimum learning rate
+  CosineAnnealingWarmRestarts:
+    T_0: 4  # Initial period length
+    T_mult: 2  # Period multiplier per restart
+    eta_min: 1e-8  # Minimum learning rate

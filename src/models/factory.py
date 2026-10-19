@@ -6,6 +6,7 @@ from .test_model_heatmap_pytorch import TestModelHeatmapPytorch
 from .test_model_heatmap_keras import TestModelHeatmapKeras
 from .HRNet_pytorch import HRNetPytorch
 from .dsnt_model_pytorch import DSNTModelPytorch
+from .cpn_pytorch import CPNPytorch
 
 # tato funkce dostane nízev modelu, který má použít a odpovídající parametry a vytvoří instanci třídy s danámi parametry
 def get_model(name, use_dsnt=False, **kwargs):
@@ -35,6 +36,7 @@ def get_model(name, use_dsnt=False, **kwargs):
         "test_model_heatmap_pytorch": TestModelHeatmapPytorch,
         "test_model_heatmap_keras": TestModelHeatmapKeras,
         "HRNet_pytorch": HRNetPytorch,
+        "CPN_pytorch": CPNPytorch,
     }
     if name not in models:
         raise ValueError(f"Unknown model name: {name}")
