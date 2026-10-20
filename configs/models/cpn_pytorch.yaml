@@ -17,7 +17,7 @@ keypoint_format: heatmaps
 loss:
   name: multi_Wing  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
   params:
-    losses: ["MSE", "AED"]  # List of loss functions to combine
+    losses: ["multi_MSE", "multi_AED"]  # List of loss functions to combine
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
     width: 10.0
     epsilon: 2.0
