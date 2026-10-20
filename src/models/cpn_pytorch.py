@@ -18,8 +18,12 @@ from .base_model import TorchModel
 
 def _conv3x3(in_ch, out_ch, stride=1):
     return nn.Conv2d(
-        in_ch, out_ch, kernel_size=3, stride=stride,
-        padding=1, bias=False
+        in_ch,
+        out_ch,
+        kernel_size=3,
+        stride=stride,
+        padding=1,
+        bias=False,
     )
 
 
@@ -40,8 +44,11 @@ class ResidualBlock(nn.Module):
         else:
             self.skip = nn.Sequential(
                 nn.Conv2d(
-                    in_ch, out_ch, kernel_size=1,
-                    stride=stride, bias=False
+                    in_ch,
+                    out_ch,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
                 ),
                 nn.BatchNorm2d(out_ch),
             )
@@ -73,8 +80,7 @@ class ResidualStage(nn.Module):
 class GlobalNet(nn.Module):
     """Top-down pyramid feature extractor."""
 
-    def __init__(self, channels=(64, 128, 256, 512),
-                 out_channels=256):
+    def __init__(self, channels=(64, 128, 256, 512), out_channels=256):
         super().__init__()
 
         self.lateral = nn.ModuleList([
@@ -117,8 +123,11 @@ class RefineNet(nn.Module):
 
         self.reduce = nn.Sequential(
             nn.Conv2d(
-                channels * 4, channels,
-                kernel_size=3, padding=1, bias=False
+                channels * 4,
+                channels,
+                kernel_size=3,
+                padding=1,
+                bias=False,
             ),
             nn.BatchNorm2d(channels),
             nn.ReLU(inplace=True),
@@ -127,7 +136,9 @@ class RefineNet(nn.Module):
         )
 
         self.output = nn.Conv2d(
-            channels, num_keypoints, kernel_size=1
+            channels,
+            num_keypoints,
+            kernel_size=1,
         )
 
     def forward(self, pyramid):
@@ -152,16 +163,40 @@ class RefineNet(nn.Module):
 
 
 class CPNPytorch(TorchModel):
-    """CPN-style model compatible with the repository's heatmap pipeline."""
+    """CPN-style model compatible with the repository's heatmap pipeline.
 
-    def __init__(self, width, pyramid_channels, stage_blocks, input_channels, num_keypoints, **kwargs):
+    If use_intermediate_loss=True, returns:
+        (B, 2, K, H, W)
+        Index 0: intermediate prediction from GlobalNet.
+        Index 1: final prediction from RefineNet.
+
+    Otherwise returns:
+        (B, K, H, W)
+    """
+
+    def __init__(
+        self,
+        width,
+        pyramid_channels,
+        stage_blocks,
+        input_channels,
+        num_keypoints,
+        use_intermediate_loss=False,
+        **kwargs,
+    ):
         super(CPNPytorch, self).__init__()
+
+        self.use_intermediate_loss = use_intermediate_loss
 
         # Backbone
         self.stem = nn.Sequential(
             nn.Conv2d(
-                input_channels, width, kernel_size=7,
-                stride=2, padding=3, bias=False
+                input_channels,
+                width,
+                kernel_size=7,
+                stride=2,
+                padding=3,
+                bias=False,
             ),
             nn.BatchNorm2d(width),
             nn.ReLU(inplace=True),
@@ -169,16 +204,28 @@ class CPNPytorch(TorchModel):
         )
 
         self.stage1 = ResidualStage(
-            width, width * 2, stage_blocks[0], stride=1
+            width,
+            width * 2,
+            stage_blocks[0],
+            stride=1,
         )
         self.stage2 = ResidualStage(
-            width * 2, width * 4, stage_blocks[1], stride=2
+            width * 2,
+            width * 4,
+            stage_blocks[1],
+            stride=2,
         )
         self.stage3 = ResidualStage(
-            width * 4, width * 8, stage_blocks[2], stride=2
+            width * 4,
+            width * 8,
+            stage_blocks[2],
+            stride=2,
         )
         self.stage4 = ResidualStage(
-            width * 8, width * 16, stage_blocks[3], stride=2
+            width * 8,
+            width * 16,
+            stage_blocks[3],
+            stride=2,
         )
 
         channels = (
@@ -191,10 +238,15 @@ class CPNPytorch(TorchModel):
         # Cascaded Pyramid Network
         self.global_net = GlobalNet(channels, pyramid_channels)
 
-        self.refine_net = RefineNet(
-            pyramid_channels,
-            num_keypoints,
-        )
+        self.refine_net = RefineNet(pyramid_channels, num_keypoints)
+
+        # Optional intermediate prediction from GlobalNet.
+        if self.use_intermediate_loss:
+            self.intermediate_output = nn.Conv2d(
+                pyramid_channels,
+                num_keypoints,
+                kernel_size=1,
+            )
 
     def forward(self, x):
         x = self.stem(x)
@@ -205,6 +257,21 @@ class CPNPytorch(TorchModel):
         c5 = self.stage4(c4)
 
         pyramid = self.global_net([c2, c3, c4, c5])
-        heatmaps = self.refine_net(pyramid)
 
-        return heatmaps
+        # Final prediction from RefineNet.
+        final_heatmaps = self.refine_net(pyramid)
+
+        if self.use_intermediate_loss:
+            # Intermediate prediction from the highest-resolution
+            # feature map produced by GlobalNet.
+            intermediate_heatmaps = self.intermediate_output(pyramid[0])
+
+            # Shape: (B, 2, K, H, W)
+            # Order: intermediate prediction, final prediction.
+            return torch.stack(
+                [intermediate_heatmaps, final_heatmaps],
+                dim=1,
+            )
+
+        # Original behavior: (B, K, H, W)
+        return final_heatmaps

@@ -10,14 +10,17 @@ model:
     width: 32
     pyramid_channels: 128
     stage_blocks: [2, 2, 2, 2]
+    use_intermediate_loss: true
 
 keypoint_format: heatmaps
 
 loss:
-  name: MSE  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
+  name: Wing  # Composite loss; options: MSE, L2Norm, AED, Huber, KLDiv, Weighted
   params:
     losses: ["MSE", "AED"]  # List of loss functions to combine
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)
+    width: 10.0
+    epsilon: 2.0
 
 metrics:
   names: [PCK_heatmaps, AED_heatmaps]  # Metrics to evaluate (PCK/AED on heatmaps)
