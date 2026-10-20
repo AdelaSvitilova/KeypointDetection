@@ -29,8 +29,6 @@ class WingLossPytorch(BaseLoss):
         self.width = width
         self.epsilon = epsilon
 
-        priint(width, epsilon)
-
         # Ensures continuity between the logarithmic and linear parts.
         self.constant = width * (
             1.0 - torch.log1p(torch.tensor(width / epsilon)).item()
