@@ -12,36 +12,60 @@ class DSNTHead(TorchModel):
     """
 
     def forward(self, heatmaps):
-        """Forward pass to calculate coordinates from heatmaps.
+        """Calculate coordinates from one or multiple heatmap predictions.
 
         Args:
-            heatmaps (torch.Tensor): Input heatmaps. Can be 4D `(B, C, H, W)`
-                or 5D `(B, N, C, H, W)`. If 5D, only the last heatmap in
-                the sequence is used.
+            heatmaps: Tensor of shape (B, K, H, W) or
+                (B, N, K, H, W), where N is the number of predictions.
 
         Returns:
-            torch.Tensor: The predicted 2D coordinates in pixel space
-                of shape `(B, C, 2)`.
+            Coordinates of shape (B, K, 2) for one prediction,
+            or (B, N, K, 2) for multiple predictions.
         """
-        # Select the last heatmap if the input is a sequence of heatmaps (5D tensor)
+        # Process all predictions with the same DSNT transformation.
         if heatmaps.ndim == 5:
-            heatmaps = heatmaps[:, -1, :, :, :].contiguous()
+            batch_size, num_predictions, num_keypoints, height, width = (
+                heatmaps.shape
+            )
 
-        # Normalize the heatmaps so that each channel sums to 1 (spatial probability distribution)
+            heatmaps = heatmaps.reshape(
+                batch_size * num_predictions,
+                num_keypoints,
+                height,
+                width,
+            )
+
+            multiple_predictions = True
+
+        elif heatmaps.ndim == 4:
+            multiple_predictions = False
+
+        else:
+            raise ValueError(
+                "Expected heatmaps with shape (B, K, H, W) "
+                "or (B, N, K, H, W)."
+            )
+
+        # Normalize each heatmap into a spatial probability distribution.
         heatmaps = dsntnn.flat_softmax(heatmaps)
 
-        # Calculate the expected coordinates in the normalized range [-1, 1]
+        # Calculate the expected coordinates in the normalized range [-1, 1].
         coords = dsntnn.dsnt(heatmaps)
 
-        # Extract the height and width of the heatmaps
-        h, w = heatmaps.shape[-2:]
+        # Map normalized coordinates to heatmap pixel coordinates.
+        height, width = heatmaps.shape[-2:]
+        coords_x = (coords[..., 0] + 1) * (width - 1) / 2
+        coords_y = (coords[..., 1] + 1) * (height - 1) / 2
 
-        # Map the coordinates from [-1, 1] back to pixel space [0, W-1] and [0, H-1]
-        coords_x = (coords[..., 0] + 1) * (w - 1) / 2
-        coords_y = (coords[..., 1] + 1) * (h - 1) / 2
-
-        # Stack x and y coordinates along the last dimension
         coords = torch.stack((coords_x, coords_y), dim=-1)
+
+        if multiple_predictions:
+            coords = coords.reshape(
+                batch_size,
+                num_predictions,
+                num_keypoints,
+                2,
+            )
 
         return coords
 

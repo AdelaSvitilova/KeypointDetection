@@ -13,7 +13,7 @@ model:
 keypoint_format: keypoints  # Output format: 'heatmaps'
 
 loss:
-  name: Huber  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, Weighted
+  name: multi_Huber  # Composite loss; options: multi_MSE, multi_L2Norm, multi_AED, multi_Huber, multi_KLDiv, multi_Wing, Weighted
   params:
     losses: ["multi_MSE", "multi_AED"]  # List of loss functions to combine
     weights: [0.4, 0.6]  # Weights for each loss (must sum to 1)

@@ -1,8 +1,8 @@
 optuna:  
-  model.params.nstack:
-    type: int
-    low: 2
-    high: 8
+  # model.params.nstack:
+  #   type: int
+  #   low: 2
+  #   high: 8
 
   train.scheduler:
     type: cat
@@ -23,7 +23,7 @@ optuna:
   loss.params.losses:
     type: list 
     choices1:  [multi_MSE, multi_L2Norm, multi_Huber]
-    choices2:  [multi_AED, multi_KLDiv]
+    choices2:  [multi_AED, multi_KLDiv, multi_Wing]
   loss.params.weights:
     type: weights 
     low: 0

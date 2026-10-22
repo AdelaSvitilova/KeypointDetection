@@ -159,8 +159,8 @@ class PytorchTrainer(BaseTrainer):
                         raise 
 
                 # Process predictions based on special network architectures
-                if self.special_mode == "cut_five_dim" and preds.ndim == 5:
-                    preds_tmp = preds[:, -1, :, :, :]
+                if self.special_mode == "cut_five_dim" and preds.ndim in (4, 5):
+                    preds_tmp = preds[:, -1, ...]
                 else:
                     preds_tmp = preds
                     
@@ -208,8 +208,8 @@ class PytorchTrainer(BaseTrainer):
                     
                     preds_val = self.model(x_val)
 
-                    if self.special_mode == "cut_five_dim" and preds_val.ndim == 5:
-                        preds_val_tmp = preds_val[:, -1, :, :, :]
+                    if self.special_mode == "cut_five_dim" and preds_val.ndim in (4,5):
+                        preds_val_tmp = preds_val[:, -1, ...]
                     else:
                         preds_val_tmp = preds_val
 
@@ -423,8 +423,8 @@ class PytorchTrainer(BaseTrainer):
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
                 preds = self.model(images)
                 
-                if self.special_mode == "cut_five_dim" and preds.ndim == 5:
-                    preds = preds[:, -1, :, :, :]
+                if self.special_mode == "cut_five_dim" and preds.ndim in (4,5):
+                    preds = preds[:, -1, ...]
                 yield item, preds.cpu().numpy()
 
     def _create_gaussian_window(self, window_size=256, sigma_scale=0.25):
@@ -511,8 +511,8 @@ class PytorchTrainer(BaseTrainer):
                 # Run the model on all extracted patches
                 preds = self.model(patches_for_model)
                 
-                if self.special_mode == "cut_five_dim" and preds.ndim == 5:
-                    preds = preds[:, -1, :, :, :]
+                if self.special_mode == "cut_five_dim" and preds.ndim in (4,5):
+                    preds = preds[:, -1, ...]
                 
                 num_keypoints = preds.shape[1]
                 out_window_size = preds.shape[2]
