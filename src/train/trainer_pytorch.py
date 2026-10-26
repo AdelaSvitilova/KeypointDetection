@@ -439,14 +439,22 @@ class PytorchTrainer(BaseTrainer):
         Returns:
             torch.Tensor: Normalized 2D Gaussian tensor.
         """
-        # If window_size happens to be a list/tuple, extract the first element
+        # If window_size happens to be a list/tuple, extract height and width
         if isinstance(window_size, (list, tuple)):
-            window_size = window_size[0]
+            height, width = window_size
+        else:
+            height = width = window_size
             
-        sigma = window_size * sigma_scale
-        coords = torch.arange(window_size, dtype=torch.float32) - (window_size - 1) / 2.0
-        grid_x, grid_y = torch.meshgrid(coords, coords, indexing='ij')
-        gaussian_2d = torch.exp(-(grid_x**2 + grid_y**2) / (2 * sigma**2))
+        sigma_y = height * sigma_scale
+        sigma_x = width * sigma_scale
+        
+        coords_y = torch.arange(height, dtype=torch.float32) - (height - 1) / 2.0
+        coords_x = torch.arange(width, dtype=torch.float32) - (width - 1) / 2.0
+        grid_y, grid_x = torch.meshgrid(coords_y, coords_x, indexing='ij')
+        
+        gaussian_2d = torch.exp(
+            -(grid_x**2 / (2 * sigma_x**2) + grid_y**2 / (2 * sigma_y**2))
+        )
         
         return gaussian_2d / gaussian_2d.max()
 
@@ -468,7 +476,7 @@ class PytorchTrainer(BaseTrainer):
             min_peak_threshold (float): Thresholding for empty windows (0 = disabled).
 
         Yields:
-            tuple: (input item dict, final stitched heatmap predictions as a numpy array).
+            tuple: (input item dict, final predictions).
         """
         print("sliding window predict")
         if isinstance(window_size, (list, tuple)):
@@ -514,6 +522,70 @@ class PytorchTrainer(BaseTrainer):
                 if self.special_mode == "cut_five_dim" and preds.ndim in (4,5):
                     preds = preds[:, -1, ...]
                 
+                # ==================================================
+                # Direct keypoint prediction
+                # ==================================================
+                if self.keypoint_format == "keypoints":
+                    # Expected output: (B * L, num_keypoints, 2)
+                    if preds.ndim != 3 or preds.shape[-1] != 2:
+                        raise ValueError(
+                            f"Expected keypoint predictions with shape (B*L, K, 2), "
+                            f"but got {preds.shape}"
+                        )
+                    
+                    num_keypoints = preds.shape[1]
+                    preds = preds.reshape(B, L, num_keypoints, 2)
+                    
+                    # Get the position of each sliding window in the original image
+                    patch_y = torch.arange(num_patches_H, device=self.device) * window_stride
+                    patch_x = torch.arange(num_patches_W, device=self.device) * window_stride
+                    grid_y, grid_x = torch.meshgrid(patch_y, patch_x, indexing='ij')
+                    patch_origins = torch.stack([grid_x.reshape(-1), grid_y.reshape(-1)], dim=-1).float()
+                    
+                    # Convert local coordinates to global image coordinates
+                    preds[..., 0] += patch_origins[:, 0].view(1, L, 1)
+                    preds[..., 1] += patch_origins[:, 1].view(1, L, 1)
+                    
+                    # Weight predictions according to their position inside the patch
+                    sigma = window_size * sigma_scale
+                    center = (window_size - 1) / 2.0
+                    local_x = preds[..., 0] - patch_origins[:, 0].view(1, L, 1)
+                    local_y = preds[..., 1] - patch_origins[:, 1].view(1, L, 1)
+                    
+                    gaussian_weights = torch.exp(
+                        -((local_x - center) ** 2 + (local_y - center) ** 2) / (2 * sigma ** 2)
+                    )
+                    
+                    # Ignore predictions outside the original image
+                    valid_points = (
+                        (local_x >= 0) & (local_x < window_size) &
+                        (local_y >= 0) & (local_y < window_size) &
+                        (preds[..., 0] >= 0) & (preds[..., 0] < W) &
+                        (preds[..., 1] >= 0) & (preds[..., 1] < H)
+                    )
+                    gaussian_weights = gaussian_weights * valid_points.float()
+                    
+                    # Merge predictions from overlapping windows using weighted average
+                    weighted_preds = preds * gaussian_weights.unsqueeze(-1)
+                    preds_sum = weighted_preds.sum(dim=1)
+                    weights_sum = gaussian_weights.sum(dim=1)
+                    
+                    safe_weights = torch.where(weights_sum > 1e-6, weights_sum, torch.ones_like(weights_sum))
+                    final_keypoints = preds_sum / safe_weights.unsqueeze(-1)
+                    
+                    # Mark keypoints without valid predictions as NaN
+                    final_keypoints = torch.where(
+                        (weights_sum > 1e-6).unsqueeze(-1),
+                        final_keypoints,
+                        torch.full_like(final_keypoints, float("nan"))
+                    )
+                    
+                    yield item, final_keypoints.cpu().numpy()
+                    continue
+                
+                # ==================================================
+                # Heatmap prediction (original code)
+                # ==================================================
                 num_keypoints = preds.shape[1]
                 out_window_size = preds.shape[2]
                 
