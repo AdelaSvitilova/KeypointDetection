@@ -10,7 +10,7 @@ class HuberLossPytorch(BaseLoss):
     which is less sensitive to outliers than MSE.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Initialize the Huber loss module with default reduction and delta."""
         super().__init__()
         self.loss_fn = nn.HuberLoss()

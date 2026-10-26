@@ -13,7 +13,7 @@ class AEDLossPytorch(BaseLoss):
         - reduces the result over the batch.
     """
 
-    def __init__(self, reduction="mean", beta=100.0):
+    def __init__(self, reduction="mean", beta=100.0, **kwargs):
         """
         Args:
             reduction: Reduction over batch; one of "mean", "sum", or None.

@@ -11,7 +11,7 @@ class MSELossKeras(BaseLoss):
     wherever a framework-specific loss function is required.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = MeanSquaredError()
 

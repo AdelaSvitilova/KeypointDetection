@@ -11,7 +11,7 @@ class MultiWingLossPytorch(BaseLoss):
     to each stack, then averages the losses over all stacks.
     """
 
-    def __init__(self, width=10.0, epsilon=2.0):
+    def __init__(self, width=10.0, epsilon=2.0, **kwargs):
         """Initialize the multi-stack Wing loss.
 
         Args:
@@ -22,6 +22,7 @@ class MultiWingLossPytorch(BaseLoss):
         self.loss_fn = WingLossPytorch(
             width=width,
             epsilon=epsilon,
+            **kwargs
         )
 
     def __call__(self, preds, targets, **kwargs):

@@ -12,7 +12,7 @@ class WeightedLoss(BaseLoss):
     where each loss is responsible for handling its own input types and shapes.
     """
 
-    def __init__(self, losses, weights):
+    def __init__(self, losses, weights, **kwargs):
         """
         Args:
             losses: List of loss callables; each must accept

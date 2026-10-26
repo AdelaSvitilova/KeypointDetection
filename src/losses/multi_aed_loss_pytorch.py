@@ -12,12 +12,12 @@ class MultiAEDLossPytorch(BaseLoss):
     then averages over stacks.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initialize the multi‑stack AED loss using AEDLossPytorch.
         """
         super().__init__()
-        self.loss_fn = AEDLossPytorch()
+        self.loss_fn = AEDLossPytorch(**kwargs)
 
     def __call__(self, preds, keypoint_targets, **kwargs):
         """

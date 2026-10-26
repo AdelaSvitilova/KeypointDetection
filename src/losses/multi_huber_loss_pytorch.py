@@ -12,12 +12,12 @@ class MultiHuberLossPytorch(BaseLoss):
     then averages over stacks.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initialize the multi‑stack Huber loss using HuberLossPytorch.
         """
         super().__init__()
-        self.loss_fn = HuberLossPytorch()
+        self.loss_fn = HuberLossPytorch(**kwargs)
 
     def __call__(self, preds, targets, **kwargs):
         """

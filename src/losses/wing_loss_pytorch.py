@@ -12,7 +12,7 @@ class WingLossPytorch(BaseLoss):
     with Convolutional Neural Networks'.
     """
 
-    def __init__(self, width=10.0, epsilon=2.0):
+    def __init__(self, width=10.0, epsilon=2.0, **kwargs):
         """Initialize the Wing loss parameters.
 
         Args:

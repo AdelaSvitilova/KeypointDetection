@@ -14,7 +14,7 @@ class MSELossPytorch(BaseLoss):
     through the BaseLoss abstract class.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.MSELoss()
 

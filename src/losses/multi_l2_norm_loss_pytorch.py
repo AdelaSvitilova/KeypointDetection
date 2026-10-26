@@ -14,12 +14,12 @@ class MultiL2NormLossPytorch(BaseLoss):
     then averages the loss over stacks.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initialize the multi‑stack L2‑norm loss using L2NormLossPytorch.
         """
         super().__init__()
-        self.loss_fn = L2NormLossPytorch()
+        self.loss_fn = L2NormLossPytorch(**kwargs)
 
     def __call__(self, preds, targets, **kwargs):
         """

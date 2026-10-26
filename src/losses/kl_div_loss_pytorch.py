@@ -13,7 +13,7 @@ class KLDivLossPytorch(BaseLoss):
         targets: (B, K, H, W)  # heatmaps (not necessarily normalized)
     """
 
-    def __init__(self, reduction="batchmean", eps=1e-8):
+    def __init__(self, reduction="batchmean", eps=1e-8, **kwargs):
         """
         Args:
             reduction: Reduction mode for nn.KLDivLoss; one of "batchmean", "sum", "mean", "none".

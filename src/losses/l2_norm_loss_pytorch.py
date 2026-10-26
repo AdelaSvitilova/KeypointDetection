@@ -10,7 +10,7 @@ class L2NormLossPytorch(BaseLoss):
     Computes the L2 distance per sample (along dim=1) and optionally reduces over the batch.
     """
 
-    def __init__(self, reduction="mean"):
+    def __init__(self, reduction="mean", **kwargs):
         """
         Args:
             reduction: Reduction over batch; one of "mean", "sum", or None.

@@ -17,7 +17,7 @@ class MultiMSELossPytorch(BaseLoss):
     through the BaseLoss abstract class.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
         self.loss_fn = nn.MSELoss()
 
@@ -37,7 +37,7 @@ class MultiMSELossPytorch(BaseLoss):
         losses = []
         for i in range(num_stacks):
             stack_preds = preds[:, i]
-            loss = self.loss_fn(stack_preds, targets)
+            loss = self.loss_fn(stack_preds, targets, **kwargs)
             losses.append(loss)
 
         #print([l.item() for l in losses])

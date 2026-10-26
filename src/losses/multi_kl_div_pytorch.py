@@ -13,12 +13,12 @@ class MultiKLDivLossPytorch(BaseLoss):
         targets: (B, K, H, W)     # ground‑truth heatmap probabilities
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         Initialize the multi‑stack KL divergence loss using KLDivLossPytorch.
         """
         super().__init__()
-        self.loss_fn = KLDivLossPytorch()
+        self.loss_fn = KLDivLossPytorch(**kwargs)
 
     def __call__(self, preds, targets, **kwargs):
         """
