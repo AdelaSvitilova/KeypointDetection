@@ -2,7 +2,7 @@ model:
   name: stacked_hourglass_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
   special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
-  predict_type: null #"sliding_window"
+  predict_type: "sliding_window"
   use_dsnt: False
   params:
     input_channels: 3  # RGB input channels
@@ -36,6 +36,7 @@ dataset:
       - 64
       - 64
     window_stride:
+      - 128
       - 128
 
 train:

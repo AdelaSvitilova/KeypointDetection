@@ -63,6 +63,7 @@ dataset:
       - 64
     window_stride:
       - 128
+      - 128
 
 train:
   scheduler: CosineAnnealingWarmRestarts  # LR scheduler; options: CosineAnnealingLR, CosineAnnealingWarmRestarts

@@ -152,8 +152,15 @@ def visualize_keypoints_combined(image, keypoints_pred, path_to_save, fname="key
     if output_shape is not None:
         H_out, W_out = output_shape
         keypoints_pred = keypoints_pred.copy()
-        keypoints_pred[:, 0] = keypoints_pred[:, 0] * W / W_out
-        keypoints_pred[:, 1] = keypoints_pred[:, 1] * H / H_out
+        keypoints_pred[:, 0] *= W / W_out
+        keypoints_pred[:, 1] *= H / H_out
+
+        if keypoints is not None:
+            keypoints = np.atleast_2d(
+                np.asarray(keypoints, dtype=float)
+            ).copy()
+            keypoints[:, 0] *= W / W_out
+            keypoints[:, 1] *= H / H_out
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(image)
@@ -165,10 +172,10 @@ def visualize_keypoints_combined(image, keypoints_pred, path_to_save, fname="key
 
         # Overlay ground truth keypoints
         if keypoints is not None:
-            keypoints = np.atleast_2d(np.asarray(keypoints, dtype=float)).copy()
-            if output_shape is not None:
-                keypoints[:, 0] = keypoints[:, 0] * W / W_out
-                keypoints[:, 1] = keypoints[:, 1] * H / H_out
+            # keypoints = np.atleast_2d(np.asarray(keypoints, dtype=float)).copy()
+            # if output_shape is not None:
+            #     keypoints[:, 0] = keypoints[:, 0] * W / W_out
+            #     keypoints[:, 1] = keypoints[:, 1] * H / H_out
             ax.scatter(keypoints[:, 0], keypoints[:, 1], c="green", s=6, marker="x", label="Annotation")
 
     # Filter out duplicate labels in legend
@@ -266,11 +273,31 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
             if cfg["keypoint_format"] == "keypoints":
                 # DSNT output: [K, 2]
                 predictions = np.asarray(pred, dtype=float)
+
+                if cfg["model"]["predict_type"] == "sliding_window":
+                    if img.ndim == 3 and img.shape[0] in (1, 3):
+                        img_h, img_w = img.shape[1:3]
+                    else:
+                        img_h, img_w = img.shape[:2]
+
+                    win_size = cfg["dataset"]["params"]["window_size"]
+                    out_size = cfg["dataset"]["params"]["window_output_size"]
+
+                    win_h = win_size[0] if isinstance(win_size, (list, tuple)) else win_size
+                    win_w = win_size[1] if isinstance(win_size, (list, tuple)) else win_size
+                    out_h = out_size[0] if isinstance(out_size, (list, tuple)) else out_size
+                    out_w = out_size[1] if isinstance(out_size, (list, tuple)) else out_size
+
+                    heatmap_height = img_h * (out_h / win_h)
+                    heatmap_width = img_w * (out_w / win_w)
+                else:
+                    heatmap_height, heatmap_width = cfg["dataset"]["params"]["output_size"]
+                    
             else:
                 # Heatmap output: [K, H, W]
+                heatmap_height, heatmap_width = pred.shape[-2:]
 
                 predictions = []
-
                 for heatmap in pred:
                     y_pred, x_pred = np.unravel_index(
                         np.argmax(heatmap),
@@ -286,7 +313,6 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
                 (heatmap_height, heatmap_width),
                 (orig_height, orig_width)
             )
-
             annotation_original = output_to_original_coordinates(
                 keypoints,
                 (heatmap_height, heatmap_width),
@@ -1126,6 +1152,7 @@ def main():
         loss_fn=None,
         metrics=None,
         experiment_name=cfg["experiment"]["name"],
+        keypoint_format=cfg["keypoint_format"],
         special_mode=cfg["model"].get("special_mode"),
         **cfg["train"]
     )

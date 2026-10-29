@@ -427,7 +427,7 @@ class PytorchTrainer(BaseTrainer):
                     preds = preds[:, -1, ...]
                 yield item, preds.cpu().numpy()
 
-    def _create_gaussian_window(self, window_size=256, sigma_scale=0.25):
+    def _create_gaussian_window(self, window_size=(256, 256), sigma_scale=0.25):
         """Creates a 2D Gaussian window used to weight sliding window predictions.
         
         This prevents harsh edge artifacts by prioritizing the center of each cropped window.
@@ -459,180 +459,214 @@ class PytorchTrainer(BaseTrainer):
         return gaussian_2d / gaussian_2d.max()
 
     def _sliding_window_predict(
-        self, 
-        data_loader, 
-        window_size=256, 
-        window_stride=128, 
-        sigma_scale=0.25, 
+        self,
+        data_loader,
+        window_size=256,
+        window_stride=128,
+        sigma_scale=0.25,
         min_peak_threshold=0.05,
+        window_output_size=64,
     ):
-        """Generates predictions using a sliding window strategy.
-
-        Args:
-            data_loader (DataLoader): The DataLoader providing the images.
-            window_size (int or tuple): Size of the cropped patches.
-            window_stride (int or tuple): Stride between subsequent crops.
-            sigma_scale (float): Controls the Gaussian weighting used for patch overlap.
-            min_peak_threshold (float): Thresholding for empty windows (0 = disabled).
-
-        Yields:
-            tuple: (input item dict, final predictions).
-        """
-        print("sliding window predict")
         if isinstance(window_size, (list, tuple)):
-            window_size = window_size[0]
+            window_h, window_w = window_size
+        else:
+            window_h = window_w = window_size
 
         if isinstance(window_stride, (list, tuple)):
-            window_stride = window_stride[0]
+            stride_h, stride_w = window_stride
+        else:
+            stride_h = stride_w = window_stride
 
         self.model.eval()
-        
+
         with torch.no_grad():
             for item in data_loader:
-                images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
+                images = torch.as_tensor(
+                    item["image"], dtype=torch.float32, device=self.device
+                )
                 B, C, H, W = images.shape
-                
-                # Determine necessary padding so the sliding window covers the entire image
-                if H < window_size:
-                    pad_H = window_size - H
-                    num_patches_H = 1
-                else:
-                    num_patches_H = math.ceil((H - window_size) / window_stride) + 1
-                    pad_H = (num_patches_H - 1) * window_stride + window_size - H
-                    
-                if W < window_size:
-                    pad_W = window_size - W
-                    num_patches_W = 1
-                else:
-                    num_patches_W = math.ceil((W - window_size) / window_stride) + 1
-                    pad_W = (num_patches_W - 1) * window_stride + window_size - W
-                
-                # Apply padding to the original image tensor
-                padded_images = F.pad(images, (0, pad_W, 0, pad_H), mode='constant', value=0)
-                H_pad, W_pad = padded_images.shape[2], padded_images.shape[3]
-                
-                # Extract patches across the padded image
-                patches = F.unfold(padded_images, kernel_size=window_size, stride=window_stride)
-                _, _, L = patches.shape
-                patches_for_model = patches.transpose(1, 2).reshape(B * L, C, window_size, window_size)
-                
-                # Run the model on all extracted patches
+
+                num_patches_h = max(
+                    1, math.ceil(max(0, H - window_h) / stride_h) + 1
+                )
+                num_patches_w = max(
+                    1, math.ceil(max(0, W - window_w) / stride_w) + 1
+                )
+
+                pad_h = (num_patches_h - 1) * stride_h + window_h - H
+                pad_w = (num_patches_w - 1) * stride_w + window_w - W
+
+                padded_images = F.pad(
+                    images, (0, pad_w, 0, pad_h), mode="constant", value=0
+                )
+                patches = F.unfold(
+                    padded_images,
+                    kernel_size=(window_h, window_w),
+                    stride=(stride_h, stride_w),
+                )
+                L = patches.shape[-1]
+                patches_for_model = patches.transpose(1, 2).reshape(
+                    B * L, C, window_h, window_w
+                )
+
                 preds = self.model(patches_for_model)
-                
-                if self.special_mode == "cut_five_dim" and preds.ndim in (4,5):
+
+                if self.special_mode == "cut_five_dim" and preds.ndim in (4, 5):
                     preds = preds[:, -1, ...]
-                
-                # ==================================================
-                # Direct keypoint prediction
-                # ==================================================
+
                 if self.keypoint_format == "keypoints":
-                    # Expected output: (B * L, num_keypoints, 2)
                     if preds.ndim != 3 or preds.shape[-1] != 2:
                         raise ValueError(
-                            f"Expected keypoint predictions with shape (B*L, K, 2), "
-                            f"but got {preds.shape}"
+                            "Expected keypoint output (B*L, K, 2), "
+                            f"got {tuple(preds.shape)}"
                         )
-                    
-                    num_keypoints = preds.shape[1]
-                    preds = preds.reshape(B, L, num_keypoints, 2)
-                    
-                    # Get the position of each sliding window in the original image
-                    patch_y = torch.arange(num_patches_H, device=self.device) * window_stride
-                    patch_x = torch.arange(num_patches_W, device=self.device) * window_stride
-                    grid_y, grid_x = torch.meshgrid(patch_y, patch_x, indexing='ij')
-                    patch_origins = torch.stack([grid_x.reshape(-1), grid_y.reshape(-1)], dim=-1).float()
-                    
-                    # Convert local coordinates to global image coordinates
-                    preds[..., 0] += patch_origins[:, 0].view(1, L, 1)
-                    preds[..., 1] += patch_origins[:, 1].view(1, L, 1)
-                    
-                    # Weight predictions according to their position inside the patch
-                    sigma = window_size * sigma_scale
-                    center = (window_size - 1) / 2.0
-                    local_x = preds[..., 0] - patch_origins[:, 0].view(1, L, 1)
-                    local_y = preds[..., 1] - patch_origins[:, 1].view(1, L, 1)
-                    
-                    gaussian_weights = torch.exp(
-                        -((local_x - center) ** 2 + (local_y - center) ** 2) / (2 * sigma ** 2)
+
+                    _, K, _ = preds.shape
+                    preds = preds.reshape(B, L, K, 2).clone()
+
+                    if isinstance(window_output_size, (list, tuple)):
+                        output_h, output_w = window_output_size
+                    else:
+                        output_h = output_w = window_output_size
+
+                    scale_x = output_w / window_w
+                    scale_y = output_h / window_h
+
+                    grid_y, grid_x = torch.meshgrid(
+                        torch.arange(num_patches_h, device=self.device),
+                        torch.arange(num_patches_w, device=self.device),
+                        indexing="ij",
                     )
-                    
-                    # Ignore predictions outside the original image
-                    valid_points = (
-                        (local_x >= 0) & (local_x < window_size) &
-                        (local_y >= 0) & (local_y < window_size) &
-                        (preds[..., 0] >= 0) & (preds[..., 0] < W) &
-                        (preds[..., 1] >= 0) & (preds[..., 1] < H)
+
+                    origin_x = (
+                        grid_x.reshape(-1) * stride_w * scale_x
+                    ).to(preds.dtype)
+
+                    origin_y = (
+                        grid_y.reshape(-1) * stride_h * scale_y
+                    ).to(preds.dtype)
+
+                    local_x = preds[..., 0].clone()
+                    local_y = preds[..., 1].clone()
+
+                    preds[..., 0] += origin_x.view(1, L, 1)
+                    preds[..., 1] += origin_y.view(1, L, 1)
+
+                    valid = (
+                        (local_x >= 0)
+                        & (local_x < output_w)
+                        & (local_y >= 0)
+                        & (local_y < output_h)
+                        & (preds[..., 0] < W * scale_x)
+                        & (preds[..., 1] < H * scale_y)
                     )
-                    gaussian_weights = gaussian_weights * valid_points.float()
-                    
-                    # Merge predictions from overlapping windows using weighted average
-                    weighted_preds = preds * gaussian_weights.unsqueeze(-1)
-                    preds_sum = weighted_preds.sum(dim=1)
-                    weights_sum = gaussian_weights.sum(dim=1)
-                    
-                    safe_weights = torch.where(weights_sum > 1e-6, weights_sum, torch.ones_like(weights_sum))
-                    final_keypoints = preds_sum / safe_weights.unsqueeze(-1)
-                    
-                    # Mark keypoints without valid predictions as NaN
+
+                    center_x = (output_w - 1) / 2
+                    center_y = (output_h - 1) / 2
+                    sigma_x = max(output_w * sigma_scale, 1e-6)
+                    sigma_y = max(output_h * sigma_scale, 1e-6)
+
+                    weights = torch.exp(
+                        -0.5 * (
+                            ((local_x - center_x) / sigma_x) ** 2
+                            + ((local_y - center_y) / sigma_y) ** 2
+                        )
+                    )
+
+                    p = preds.transpose(1, 2)
+                    v = valid.transpose(1, 2).float()
+                    w = weights.transpose(1, 2) * v
+
+                    diff = p.unsqueeze(3) - p.unsqueeze(2)
+                    dist_sq = (diff ** 2).sum(dim=-1)
+
+                    dist_sq = dist_sq + (1 - v.unsqueeze(2)) * 1e6
+
+                    is_close = (dist_sq < 25.0).float()
+
+                    density_score = (is_close * w.unsqueeze(2)).sum(dim=-1)
+
+                    best_idx = density_score.argmax(dim=-1) # [B, K]
+
+                    best_idx_exp = best_idx.view(B, K, 1, 1).expand(B, K, 1, L)
+                    best_cluster_mask = torch.gather(is_close, dim=2, index=best_idx_exp).squeeze(2)
+
+                    best_cluster_mask = best_cluster_mask.transpose(1, 2)
+
+                    cluster_weights = weights * best_cluster_mask * valid.float()
+
+                    weighted_sum = (preds * cluster_weights.unsqueeze(-1)).sum(dim=1)
+                    weight_sum = cluster_weights.sum(dim=1, keepdim=False).unsqueeze(-1)
+
+                    final_keypoints = weighted_sum / weight_sum.clamp_min(1e-8)
+
                     final_keypoints = torch.where(
-                        (weights_sum > 1e-6).unsqueeze(-1),
+                        weight_sum > 0,
                         final_keypoints,
-                        torch.full_like(final_keypoints, float("nan"))
+                        torch.full_like(final_keypoints, float("nan")),
                     )
-                    
+
                     yield item, final_keypoints.cpu().numpy()
-                    continue
-                
-                # ==================================================
-                # Heatmap prediction (original code)
-                # ==================================================
-                num_keypoints = preds.shape[1]
-                out_window_size = preds.shape[2]
-                
-                # Setup scaling factors in case the model's output size differs from the input size
-                scale_factor = float(out_window_size) / float(window_size)
-                out_stride = int(window_stride * scale_factor)
-                out_H_pad = int(H_pad * scale_factor)
-                out_W_pad = int(W_pad * scale_factor)
-                out_H = int(H * scale_factor)
-                out_W = int(W * scale_factor)
-                
-                # Generate Gaussian mask to smooth the overlaps during stitching
-                gaussian_window = self._create_gaussian_window(
-                    window_size=out_window_size, 
-                    sigma_scale=sigma_scale
-                ).to(self.device)
-                
-                gaussian_flat = gaussian_window.view(-1, 1)
-                preds_reshaped = preds.view(B, L, num_keypoints, out_window_size * out_window_size)
-                gauss_4d = gaussian_flat.view(1, 1, 1, -1)
-                
-                # Apply the Gaussian weights to the predicted patches
-                preds_weighted = preds_reshaped * gauss_4d
-                preds_flat = preds_weighted.view(B, L, num_keypoints * out_window_size * out_window_size).transpose(1, 2)
-                
-                # Fold the patches back together to reconstruct the full heatmap
-                reconstructed_sum = F.fold(
-                    preds_flat, 
-                    output_size=(out_H_pad, out_W_pad), 
-                    kernel_size=out_window_size, 
-                    stride=out_stride
-                )
-                
-                # Keep track of overlapping weights to properly normalize the stitched regions
-                gauss_map_src = gaussian_flat.view(1, -1, 1).expand(B, -1, L)
-                overlap_weight_map = F.fold(
-                    gauss_map_src, 
-                    output_size=(out_H_pad, out_W_pad), 
-                    kernel_size=out_window_size, 
-                    stride=out_stride
-                )
-                
-                # Normalize by accumulated weights, using ones_like as fallback to avoid division by zero
-                safe_weight_map = torch.where(overlap_weight_map > 1e-6, overlap_weight_map, torch.ones_like(overlap_weight_map))
-                final_heatmaps = reconstructed_sum / safe_weight_map
-                
-                # Crop back to the original (scaled) image dimensions to remove padding
-                final_heatmaps = final_heatmaps[:, :, :out_H, :out_W]
-                                        
-                yield item, final_heatmaps.cpu().numpy()
+
+                else:
+                    if preds.ndim != 4:
+                        raise ValueError(
+                            "Expected heatmap output (B*L, K, H, W), "
+                            f"got {tuple(preds.shape)}"
+                        )
+
+                    _, K, out_h, out_w = preds.shape
+                    scale_y = out_h / window_h
+                    scale_x = out_w / window_w
+                    out_stride_h = max(1, round(stride_h * scale_y))
+                    out_stride_w = max(1, round(stride_w * scale_x))
+
+                    out_h_pad = (num_patches_h - 1) * out_stride_h + out_h
+                    out_w_pad = (num_patches_w - 1) * out_stride_w + out_w
+                    out_h_full = math.ceil(H * scale_y)
+                    out_w_full = math.ceil(W * scale_x)
+
+                    gaussian = self._create_gaussian_window(
+                        window_size=out_h,
+                        sigma_scale=sigma_scale,
+                    ).to(self.device)
+
+                    if out_h != out_w:
+                        yy, xx = torch.meshgrid(
+                            torch.arange(out_h, device=self.device),
+                            torch.arange(out_w, device=self.device),
+                            indexing="ij",
+                        )
+                        gaussian = torch.exp(
+                            -0.5 * (
+                                ((xx - (out_w - 1) / 2) / max(out_w * sigma_scale, 1e-6)) ** 2
+                                + ((yy - (out_h - 1) / 2) / max(out_h * sigma_scale, 1e-6)) ** 2
+                            )
+                        )
+
+                    gaussian_flat = gaussian.reshape(-1, 1)
+                    preds_reshaped = preds.reshape(B, L, K, out_h * out_w)
+                    preds_weighted = preds_reshaped * gaussian_flat.view(1, 1, 1, -1)
+                    preds_flat = preds_weighted.reshape(
+                        B, L, K * out_h * out_w
+                    ).transpose(1, 2)
+
+                    reconstructed_sum = F.fold(
+                        preds_flat,
+                        output_size=(out_h_pad, out_w_pad),
+                        kernel_size=(out_h, out_w),
+                        stride=(out_stride_h, out_stride_w),
+                    )
+
+                    weight_src = gaussian_flat.view(1, -1, 1).expand(B, -1, L)
+                    overlap_weight_map = F.fold(
+                        weight_src,
+                        output_size=(out_h_pad, out_w_pad),
+                        kernel_size=(out_h, out_w),
+                        stride=(out_stride_h, out_stride_w),
+                    )
+
+                    final_heatmaps = reconstructed_sum / overlap_weight_map.clamp_min(1e-8)
+                    final_heatmaps = final_heatmaps[:, :, :out_h_full, :out_w_full]
+
+                    yield item, final_heatmaps.cpu().numpy()
