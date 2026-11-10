@@ -211,7 +211,7 @@ def output_to_original_coordinates(coordinates, heatmap_shape, original_shape):
     return result
 
 
-def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label):
+def predict_images(cfg, trainer, loader, per_image_metrics, per_keypoint_metrics, folder_path, annotations_label):
     """Runs the prediction loop over the dataset, visualizes results, computes metrics,
     and creates a DataFrame from the predictions.
 
@@ -219,12 +219,14 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
         cfg (dict): Configuration dictionary containing model, predict, and dataset settings.
         trainer (BaseTrainer): Initialized PyTorch trainer object for running inference.
         loader (generator): Data loader yielding batches of images and annotations.
-        metrics (list): List of metric objects to track and compute.
+        per_image_metrics (list): List of metric objects to compute for the whole image.
+        per_keypoint_metrics (list): List of metric objects to compute for each individual keypoint.
         folder_path (str): Base output directory to save results and visualizations.
         annotations_label (list of str): List of string labels for each keypoint.
 
     Returns:
-        pd.DataFrame: DataFrame containing detailed coordinates for predictions and ground truth.
+        pd.DataFrame: DataFrame containing detailed coordinates for predictions and ground truth,
+                      along with per-keypoint metrics.
     """
     path_to_save = os.path.join(folder_path, "prediction")
     predict_images_enabled = cfg["predict"].get("predict_images", True)
@@ -235,7 +237,9 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
     results = []
     records = []
 
-    metric_names = [type(m).__name__ for m in metrics]
+    # Get exact metric names from config to use as dictionary keys and CSV headers
+    per_image_metric_names = cfg["predict"]["per_image_metrics"]
+    per_keypoint_metric_names = cfg["predict"]["per_keypoint_metrics"]
 
     # === Prediction loop ===
     predictions_output = trainer.predict(
@@ -264,7 +268,6 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
             keypoints = np.asarray(keypoints)
 
             # Determine the model output resolution used for coordinate conversion.
-            # Sliding-window prediction uses window_output_size, while standard prediction uses output_size.
             if cfg["model"]["predict_type"] == "sliding_window":
                 heatmap_height, heatmap_width = cfg["dataset"]["params"]["window_output_size"]
             else:
@@ -343,34 +346,34 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
                     )
 
             # ============================================================
-            # Metrics for current image - HEATMAP SPACE
+            # Metrics for current image - HEATMAP SPACE (Per-Image)
             # ============================================================
 
             metrics_heatmap = {}
 
-            for m in metrics:
+            for metric_name, m in zip(per_image_metric_names, per_image_metrics):
                 m.reset()
                 m.update(
                     np.expand_dims(predictions, axis=0),
                     np.expand_dims(keypoints, axis=0),
                     norm_coefficient=norm_coefficient,
                 )
-                metrics_heatmap[type(m).__name__] = m.compute()
+                metrics_heatmap[metric_name] = m.compute()
 
             # ============================================================
-            # Metrics for current image - ORIGINAL IMAGE SPACE
+            # Metrics for current image - ORIGINAL IMAGE SPACE (Per-Image)
             # ============================================================
 
             metrics_original = {}
 
-            for m in metrics:
+            for metric_name, m in zip(per_image_metric_names, per_image_metrics):
                 m.reset()
                 m.update(
                     np.expand_dims(prediction_original, axis=0),
                     np.expand_dims(annotation_original, axis=0),
                     norm_coefficient=norm_coefficient,
                 )
-                metrics_original[type(m).__name__] = m.compute()
+                metrics_original[metric_name] = m.compute()
 
             # ============================================================
             # Add filename and metrics to results
@@ -379,17 +382,17 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
             row = {"filename": fname}
 
             # Heatmap metrics
-            for metric_name in metric_names:
+            for metric_name in per_image_metric_names:
                 row[f"{metric_name}"] = metrics_heatmap[metric_name]
 
             # Original image metrics
-            for metric_name in metric_names:
+            for metric_name in per_image_metric_names:
                 row[f"{metric_name}_original"] = metrics_original[metric_name]
 
             results.append(row)
 
             # ============================================================
-            # Add prediction and annotation coordinates to DataFrame
+            # Add prediction, annotation coordinates & per-keypoint metrics
             # ============================================================
 
             record = {
@@ -403,6 +406,9 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
             for keypoint_idx in range(pred.shape[0]):
                 label = annotations_label[keypoint_idx]
 
+                # ==========================================
+                # 1. Save coordinates (Heatmap and Original space)
+                # ==========================================
                 record.update({
                     # Heatmap space
                     f"{label}_ann_x": float(keypoints[keypoint_idx, 0]),
@@ -417,19 +423,44 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
                     f"{label}_pred_orig_y": float(prediction_original[keypoint_idx, 1]),
                 })
 
+                # ==========================================
+                # 2. Compute per-keypoint metrics
+                # ==========================================
+                
+                # Heatmap space metrics
+                kp_pred = np.expand_dims(predictions[keypoint_idx:keypoint_idx+1], axis=0)
+                kp_ann = np.expand_dims(keypoints[keypoint_idx:keypoint_idx+1], axis=0)
+                
+                for metric_name, m in zip(per_keypoint_metric_names, per_keypoint_metrics):
+                    m.reset()
+                    m.update(kp_pred, kp_ann, norm_coefficient=norm_coefficient)
+                    record[f"{label}_{metric_name}"] = m.compute()
+
+                # Original image space metrics
+                kp_pred_orig = np.expand_dims(prediction_original[keypoint_idx:keypoint_idx+1], axis=0)
+                kp_ann_orig = np.expand_dims(annotation_original[keypoint_idx:keypoint_idx+1], axis=0)
+                
+                for metric_name, m in zip(per_keypoint_metric_names, per_keypoint_metrics):
+                    m.reset()
+                    m.update(kp_pred_orig, kp_ann_orig, norm_coefficient=norm_coefficient)
+                    record[f"{label}_{metric_name}_original"] = m.compute()
+
+            for metric_name in per_image_metric_names:
+                record[f"image_{metric_name}"] = metrics_heatmap[metric_name]
+                record[f"image_{metric_name}_original"] = metrics_original[metric_name]
+
             records.append(record)
 
     # ============================================================
     # Sort results
     # ============================================================
 
-    # Best/worst selection is based on HEATMAP metrics,
-    # same behavior as before.
-    for metric, direction in reversed(
-        list(zip(metric_names, cfg["predict"]["metrics_directions"]))
-    ):
+    sort_metrics = cfg["predict"]["sorting_metrics"]["metrics"]
+    sort_dirs = cfg["predict"]["sorting_metrics"]["directions"]
+
+    for metric, direction in reversed(list(zip(sort_metrics, sort_dirs))):
         is_reverse = (direction == '+')
-        results.sort(key=lambda x: x[f"{metric}"], reverse=is_reverse)
+        results.sort(key=lambda x: x[metric], reverse=is_reverse)
 
     # ============================================================
     # Save sorted results to CSV
@@ -445,23 +476,27 @@ def predict_images(cfg, trainer, loader, metrics, folder_path, annotations_label
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
 
+        # 1. Determine column order based on sorting_metrics from config
+        sort_metrics = cfg["predict"]["sorting_metrics"]["metrics"]
+        
+        # 2. Append any additional metrics from per_image_metrics at the end
+        other_metrics = [m for m in per_image_metric_names if m not in sort_metrics]
+        ordered_metrics = sort_metrics + other_metrics
+
+        # 3. Construct header in this exact order
         header = ["filename"]
-
-        # Heatmap metrics
-        header.extend([f"{metric}" for metric in metric_names])
-
-        # Original image metrics
-        header.extend([f"{metric}_original" for metric in metric_names])
+        header.extend([f"{metric}" for metric in ordered_metrics])
+        header.extend([f"{metric}_original" for metric in ordered_metrics])
 
         writer.writerow(header)
 
+        # Write sorted data
         for row in results:
             writer.writerow([row[h] for h in header])
 
     print(f"Results saved to {csv_path}")
 
     return pd.DataFrame(records)
-
 
 def copy_files(rows, base_dir, folder_path, image_column):
     """Copies selected image files from the prediction folder to a new destination.
@@ -610,29 +645,27 @@ def compute_keypoint_errors(df, coordinate_space="original"):
     return errors
 
 
-def analysis_per_keypoint(cfg, errors, output_dir, suffix=""):
-    """Calculates basic statistics (mean, median, std, max) for each keypoint.
-
-    Args:
-        cfg (dict): Configuration dictionary.
-        errors (dict): Dictionary of pixel errors per keypoint.
-        output_dir (str): Directory to save the statistics CSV.
-        suffix (str): Suffix used for the output filename.
-
-    Returns:
-        dict: Nested dictionary containing statistics for each keypoint label.
-    """
-    print("\n=== Per-keypoint analysis ===")
+def analysis_per_keypoint(cfg, df, errors, output_dir, suffix=""):
+    """Calculates basic statistics and custom metrics for each keypoint."""
+    print(f"\n=== Per-keypoint analysis {suffix} ===")
 
     stats = {}
+    m_suffix = "" if suffix == "_heatmap" else "_original"
 
     for label, err in errors.items():
+        # Calculate base pixel error statistics
         stats[label] = {
             "mean": np.mean(err),
             "median": np.median(err),
             "std": np.std(err),
             "max": np.max(err)
         }
+        
+        # Compute mean values for configured per-keypoint metrics
+        for m_name in cfg["predict"]["per_keypoint_metrics"]:
+            col_name = f"{label}_{m_name}{m_suffix}"
+            if col_name in df.columns:
+                stats[label][f"{m_name}_mean"] = df[col_name].mean()
 
         print(f"{label}: "
               f"mean={stats[label]['mean']:.2f}, "
@@ -643,6 +676,11 @@ def analysis_per_keypoint(cfg, errors, output_dir, suffix=""):
     keypoint_df = pd.DataFrame(stats).T.reset_index()
     keypoint_df = keypoint_df.rename(columns={"index": "keypoint"})
 
+    print("\nTop 5 worst keypoints:")
+    print(keypoint_df.sort_values("mean", ascending=False)[
+        ["keypoint", "mean", "max"]
+    ].head())
+
     keypoint_df.to_csv(
         os.path.join(output_dir, f"{cfg['predict']['prefix']}_per_keypoint_stats{suffix}.csv"),
         index=False
@@ -652,27 +690,24 @@ def analysis_per_keypoint(cfg, errors, output_dir, suffix=""):
 
 
 def analysis_per_image(cfg, df, errors, output_dir, suffix=""):
-    """Calculates and saves error statistics aggregated per image.
-
-    Args:
-        cfg (dict): Configuration dictionary.
-        df (pd.DataFrame): DataFrame containing image filenames.
-        errors (dict): Dictionary of keypoint errors.
-        output_dir (str): Directory to save the per-image statistics CSV.
-        suffix (str): Suffix used for the output filename.
-
-    Returns:
-        pd.DataFrame: DataFrame containing mean and max errors per image.
-    """
-    print("\n=== Per-image analysis ===")
+    """Calculates and saves error statistics aggregated per image, including custom metrics."""
+    print(f"\n=== Per-image analysis {suffix} ===")
 
     err_df = pd.DataFrame(errors)
 
+    # Calculate base pixel error statistics
     df_results = pd.DataFrame({
         "filename": df["filename"],
         "mean_error": err_df.mean(axis=1),
         "max_error": err_df.max(axis=1)
     })
+
+    # Append configured per-image metrics
+    m_suffix = "" if suffix == "_heatmap" else "_original"
+    for m_name in cfg["predict"]["per_image_metrics"]:
+        col_name = f"image_{m_name}{m_suffix}"
+        if col_name in df.columns:
+            df_results[m_name] = df[col_name]
 
     print("\nTop 5 worst images:")
     print(df_results.sort_values("mean_error", ascending=False)[
@@ -760,7 +795,7 @@ def analysis_metrics(cfg, df, coordinate_space="heatmap"):
     norm_coefficient = cfg["dataset"]["params"]["norm_coefficient"]
 
     # --- 4. Compute metrics ---
-    metrics = get_metrics(cfg["predict"]["kp_metrics"])
+    metrics = get_metrics(cfg["predict"]["global_metrics"])
     metrics_values = {}
 
     for m in metrics:
@@ -1006,7 +1041,7 @@ def analyze_prediction(cfg, folder_path, df):
 
     errors_heatmap = compute_keypoint_errors(df, coordinate_space="heatmap")
 
-    stats_heatmap = analysis_per_keypoint(cfg, errors_heatmap, folder_path, suffix="_heatmap")
+    stats_heatmap = analysis_per_keypoint(cfg, df, errors_heatmap, folder_path, suffix="_heatmap")
 
     analysis_per_image(cfg, df, errors_heatmap, folder_path, suffix="_heatmap")
 
@@ -1036,7 +1071,7 @@ def analyze_prediction(cfg, folder_path, df):
 
     errors_original = compute_keypoint_errors(df, coordinate_space="original")
 
-    stats_original = analysis_per_keypoint(cfg, errors_original, folder_path, suffix="_original")
+    stats_original = analysis_per_keypoint(cfg, df, errors_original, folder_path, suffix="_original")
 
     analysis_per_image(cfg, df, errors_original, folder_path, suffix="_original")
 
@@ -1140,8 +1175,10 @@ def main():
     )
 
     # Metrics
-    metrics = get_metrics(cfg["predict"]["metrics"])
-    print(f"Metrics initialized: {cfg['predict']['metrics']}")
+    per_image_metrics = get_metrics(cfg["predict"]["per_image_metrics"])
+    per_keypoint_metrics = get_metrics(cfg["predict"]["per_keypoint_metrics"])
+    print(f"Per-image metrics: {cfg['predict']['per_image_metrics']}")
+    print(f"Per-keypoint metrics: {cfg['predict']['per_keypoint_metrics']}")
 
     # Trainer (for prediction logic)
     trainer = get_trainer(
@@ -1175,7 +1212,8 @@ def main():
         cfg,
         trainer,
         loader,
-        metrics,
+        per_image_metrics,
+        per_keypoint_metrics,
         folder_path,
         annotations_label
     )
