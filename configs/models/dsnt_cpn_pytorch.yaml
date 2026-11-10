@@ -1,7 +1,7 @@
 model:
   name: CPN_pytorch
   backend: pytorch
-  special_mode: cut_five_dim
+  special_mode: extract_last_stack
   predict_type: null
   use_dsnt: True
   params:

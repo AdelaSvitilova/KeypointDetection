@@ -1,7 +1,7 @@
 model:
   name: stacked_hourglass_pytorch  # Model architecture name
   backend: pytorch  # Framework backend (e.g., 'pytorch')
-  special_mode: cut_five_dim  # Custom processing mode (removes 5th dimension)
+  special_mode: extract_last_stack  # Custom processing mode (removes 5th dimension)
   predict_type: "sliding_window"
   use_dsnt: True
   params:

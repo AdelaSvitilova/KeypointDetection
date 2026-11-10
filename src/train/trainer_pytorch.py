@@ -53,7 +53,7 @@ class PytorchTrainer(BaseTrainer):
             save_every_epoch (int, optional): Interval for saving checkpoints. Defaults to 10.
             experiment_name (str, optional): Name of the experiment for saving paths. Defaults to "exp0".
             Format of the keypoints. Must be either 'keypoints' or 'heatmaps'. Defaults to "keypoints".
-            special_mode (str, optional): Special handling mode (e.g., "cut_five_dim").
+            special_mode (str, optional): Special handling mode (e.g., "extract_last_stack").
             trial (optuna.Trial, optional): Optuna trial for hyperparameter optimization.
             device (str, optional): Device string ('cuda' or 'cpu'). Auto-detected if None.
             use_tensorboard (bool, optional): Enable TensorBoard logging. Defaults to True.
@@ -159,7 +159,7 @@ class PytorchTrainer(BaseTrainer):
                         raise 
 
                 # Process predictions based on special network architectures
-                if self.special_mode == "cut_five_dim" and preds.ndim in (4, 5):
+                if self.special_mode == "extract_last_stack" and preds.ndim in (4, 5):
                     preds_tmp = preds[:, -1, ...]
                 else:
                     preds_tmp = preds
@@ -208,7 +208,7 @@ class PytorchTrainer(BaseTrainer):
                     
                     preds_val = self.model(x_val)
 
-                    if self.special_mode == "cut_five_dim" and preds_val.ndim in (4,5):
+                    if self.special_mode == "extract_last_stack" and preds_val.ndim in (4,5):
                         preds_val_tmp = preds_val[:, -1, ...]
                     else:
                         preds_val_tmp = preds_val
@@ -423,7 +423,7 @@ class PytorchTrainer(BaseTrainer):
                 images = torch.as_tensor(item["image"], dtype=torch.float32, device=self.device)
                 preds = self.model(images)
                 
-                if self.special_mode == "cut_five_dim" and preds.ndim in (4,5):
+                if self.special_mode == "extract_last_stack" and preds.ndim in (4,5):
                     preds = preds[:, -1, ...]
                 yield item, preds.cpu().numpy()
 
@@ -511,7 +511,7 @@ class PytorchTrainer(BaseTrainer):
 
                 preds = self.model(patches_for_model)
 
-                if self.special_mode == "cut_five_dim" and preds.ndim in (4, 5):
+                if self.special_mode == "extract_last_stack" and preds.ndim in (4, 5):
                     preds = preds[:, -1, ...]
 
                 if self.keypoint_format == "keypoints":
